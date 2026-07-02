@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { trackClient, getSessionId, getUserId } from "@/lib/clientTelemetry";
 import GoldDivider from "@/components/GoldDivider";
 import CornerOrnament from "@/components/CornerOrnament";
 
@@ -54,6 +55,15 @@ export default function ContactPage() {
   const [referrerUrl, setReferrerUrl] = useState("");
   const [dialCode, setDialCode] = useState("+91");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const formStartedRef = useRef(false);
+
+  // Fire once when the visitor first interacts with any form field — the top of
+  // the on-page conversion funnel that pairs with EnquirySubmitted.
+  const handleFormStart = () => {
+    if (formStartedRef.current) return;
+    formStartedRef.current = true;
+    trackClient("ContactFormStarted", { sourcePagePath: sourcePagePath || "" });
+  };
 
   useEffect(() => {
     const raw = sessionStorage.getItem("chatbot_context");
@@ -128,6 +138,8 @@ export default function ContactPage() {
           recaptchaToken,
           sourcePagePath,
           referrerUrl,
+          sessionId: getSessionId(),
+          userId: getUserId(),
         }),
       });
       const data = await res.json();
@@ -170,7 +182,7 @@ export default function ContactPage() {
 
           <GoldDivider flip className="mb-10 md:mb-12 opacity-0 translate-y-5 animate-fadeUp-delayed" />
 
-          <form id="contact-form" onSubmit={handleSubmit} className="pt-2">
+          <form id="contact-form" onSubmit={handleSubmit} onFocusCapture={handleFormStart} className="pt-2">
 
             {/* ── Cluster 1: Identity ── */}
             <div className="space-y-7">
@@ -305,6 +317,7 @@ export default function ContactPage() {
                 href="https://wa.me/919654277656"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackClient("CtaClick", { channel: "whatsapp", location: "contact_page" })}
                 className="contact-opt group flex flex-col items-center text-center sm:flex-row sm:text-left gap-2 sm:gap-4 border border-ink/10 rounded-[4px] px-3 py-4 sm:px-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/60 hover:bg-[#FAF7F2] hover:shadow-[0_4px_24px_rgba(201,162,52,0.1)]"
               >
                 <span className="opt-icon w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-[#F5F0E8] border border-[#25D366]/30 rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-gold group-hover:border-gold shrink-0" aria-hidden="true">
@@ -323,6 +336,7 @@ export default function ContactPage() {
 
               <Link
                 href="mailto:info@vowsandvedas.com"
+                onClick={() => trackClient("CtaClick", { channel: "email", location: "contact_page" })}
                 className="contact-opt group flex flex-col items-center text-center sm:flex-row sm:text-left gap-2 sm:gap-4 border border-ink/10 rounded-[4px] px-3 py-4 sm:px-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/60 hover:bg-[#FAF7F2] hover:shadow-[0_4px_24px_rgba(201,162,52,0.1)]"
               >
                 <span className="opt-icon w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-[#F5F0E8] border border-ink/10 rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-gold group-hover:border-gold shrink-0" aria-hidden="true">

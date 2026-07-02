@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import html2canvas from 'html2canvas';
+import { trackClient } from '@/lib/clientTelemetry';
 
 const HashtagGenerator = () => {
   const [formData, setFormData] = useState({ bride: '', groom: '', vibe: '', loveWord: '' });
@@ -33,6 +34,11 @@ const HashtagGenerator = () => {
 
       const { hashtags } = await res.json();
       setHashtags(hashtags);
+      // Non-PII: only count + vibe, never the couple's names.
+      trackClient('HashtagGenerated', {
+        count: Array.isArray(hashtags) ? hashtags.length : 0,
+        vibe: formData.vibe || "",
+      });
     } catch (err) {
       console.error(err);
       setError('Something went wrong, please try again.');

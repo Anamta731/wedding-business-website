@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { trackClient, getSessionId } from "@/lib/clientTelemetry";
 
 // Render inline markdown: **bold** → gold semibold span
 function renderInline(text) {
@@ -121,6 +122,7 @@ export default function Chatbot() {
   const abortRef        = useRef(null);
   const sessionIdRef    = useRef(`sess_${Date.now().toString(36)}`);
   const leadFiredRef    = useRef(false);
+  const firstMsgFiredRef = useRef(false);
 
   const resetConversation = () => {
     setMessages([INITIAL_MESSAGE]);
@@ -144,6 +146,7 @@ export default function Chatbot() {
       setTimeout(() => inputRef.current?.focus(), 300);
       // Pre-warm the API and Azure OpenAI so first message responds instantly
       fetch("/api/warm").catch(() => {});
+      trackClient("ChatbotOpened", { sourcePagePath: window.location.pathname });
     }
   }, [open]);
 
@@ -159,6 +162,10 @@ export default function Chatbot() {
 
   useEffect(() => {
     window.toggleChat = () => setOpen(prev => !prev);
+    // Align the chatbot session id with the site-wide session so chatbot,
+    // page-view and enquiry events join into one funnel in the workbook.
+    const sid = getSessionId();
+    if (sid) sessionIdRef.current = sid;
     return () => { delete window.toggleChat; };
   }, []);
 
@@ -270,6 +277,11 @@ export default function Chatbot() {
     setInput("");
     setStartersVisible(false);
     setIsStreaming(true);
+
+    if (!firstMsgFiredRef.current) {
+      firstMsgFiredRef.current = true;
+      trackClient("ChatbotFirstMessage", { sourcePagePath: window.location.pathname });
+    }
 
     // Add user message + empty bot placeholder for streaming into
     const userMsg  = { role: "user", text: trimmed };
@@ -411,6 +423,7 @@ export default function Chatbot() {
             <a
               href="tel:+919654277656"
               aria-label="Call us"
+              onClick={() => trackClient("CtaClick", { channel: "phone", location: "chatbot" })}
               className="group flex flex-col items-center gap-1.5 px-4 py-3.5 hover:bg-[#251C0D] transition-colors duration-200 w-full"
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#C9A234] group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -442,6 +455,7 @@ export default function Chatbot() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Chat on WhatsApp"
+              onClick={() => trackClient("CtaClick", { channel: "whatsapp", location: "chatbot" })}
               className="group flex flex-col items-center gap-1.5 px-4 py-3.5 hover:bg-[#251C0D] transition-colors duration-200 w-full"
             >
               <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#C9A234] group-hover:scale-110 transition-transform duration-200" fill="currentColor">

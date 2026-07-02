@@ -1,0 +1,511 @@
+{
+  "version": "Notebook/1.0",
+  "isLocked": false,
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Vows & Vedas — Whole-Site Analytics\n---\nEnd-to-end visitor intelligence across the entire site: traffic, top pages, acquisition, the full lead funnel, CTA channel performance, enquiries, chatbot engagement, tools, and client errors.\n\nAll tiles read `customEvents` emitted to Application Insights via `/api/track`. Events: `PageView`, `CtaClick`, `ChatbotOpened`, `ChatbotFirstMessage`, `ContactFormStarted`, `EnquirySubmitted`, `HashtagGenerated`, `ClientError`. A shared `sessionId` / `userId` ties the funnel together.\n\n> Set the time range below, then scroll each section. Companion workbook `vows-vedas-analytics.workbook` drills into enquiries alone."
+      },
+      "name": "header-text"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "crossComponentResources": [],
+        "parameters": [
+          {
+            "id": "time-range-param",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": { "durationMs": 2592000000 },
+            "typeSettings": {
+              "selectableValues": [
+                { "durationMs": 86400000,   "createdTime": "2020-01-01T00:00:00.000Z", "isInitialTime": false, "grain": 1, "useDashboardTimeRange": false },
+                { "durationMs": 604800000,  "createdTime": "2020-01-01T00:00:00.000Z", "isInitialTime": false, "grain": 1, "useDashboardTimeRange": false },
+                { "durationMs": 2592000000, "createdTime": "2020-01-01T00:00:00.000Z", "isInitialTime": false, "grain": 1, "useDashboardTimeRange": false },
+                { "durationMs": 7776000000, "createdTime": "2020-01-01T00:00:00.000Z", "isInitialTime": false, "grain": 1, "useDashboardTimeRange": false }
+              ]
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components"
+      },
+      "name": "parameters-time"
+    },
+
+    { "type": 1, "content": { "json": "## A · Traffic Overview" }, "name": "section-traffic" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | summarize PageViews = count(), Sessions = dcount(tostring(customDimensions.sessionId)), Visitors = dcount(tostring(customDimensions.userId)) | extend Vps = round(1.0 * PageViews / Sessions, 2) | project ['Page Views'] = PageViews, ['Sessions'] = Sessions, ['Unique Visitors'] = Visitors, ['Views / Session'] = Vps",
+        "size": 3,
+        "title": "Traffic KPIs",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": { "columnMatch": "column", "formatter": 1 },
+          "leftContent": { "columnMatch": "value", "formatter": 12, "formatOptions": { "palette": "auto" } },
+          "showBorder": true,
+          "size": "auto"
+        }
+      },
+      "name": "traffic-kpis"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | summarize ['Page Views'] = count(), ['Sessions'] = dcount(tostring(customDimensions.sessionId)) by bin(timestamp, 1d) | order by timestamp asc",
+        "size": 0,
+        "title": "Traffic Over Time",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "areachart",
+        "chartSettings": { "xAxis": "timestamp", "yAxis": ["Page Views", "Sessions"] }
+      },
+      "name": "traffic-trend"
+    },
+
+    { "type": 1, "content": { "json": "## B · Pages & Engagement\nWhich pages get seen, where sessions start, how many bounce." }, "name": "section-pages" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | extend path = tostring(customDimensions.path) | extend PageLabel = case(path == '/', 'Home', path == '/contact', 'Contact', path == '/destinations', 'Destinations Hub', path startswith '/destinations/', strcat('Destination: ', extract('/destinations/([^/?#]+)', 1, path)), path startswith '/services', 'Services', path startswith '/about', 'About', path startswith '/moodboards', 'Moodboards', path startswith '/portfolio', 'Portfolio', path startswith '/venues', 'Venues', path startswith '/experiences', 'Experiences', path startswith '/ideas', 'Ideas', path startswith '/faq', 'FAQ', path startswith '/thank-you', 'Thank You', path startswith '/profile' or path startswith '/account' or path startswith '/my-enquiries' or path startswith '/saved-ideas' or path startswith '/notifications', 'Account', isempty(path), 'Unknown', path) | summarize Views = count(), Sessions = dcount(tostring(customDimensions.sessionId)) by ['Page'] = PageLabel | order by Views desc | take 25",
+        "size": 0,
+        "title": "Top Pages",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            { "columnMatch": "Views", "formatter": 4, "formatOptions": { "palette": "blue" } },
+            { "columnMatch": "Sessions", "formatter": 4, "formatOptions": { "palette": "green" } }
+          ]
+        }
+      },
+      "name": "top-pages"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | where tostring(customDimensions.isEntry) == 'true' | extend path = tostring(customDimensions.path) | extend PageLabel = case(path == '/', 'Home', path == '/contact', 'Contact', path == '/destinations', 'Destinations Hub', path startswith '/destinations/', strcat('Destination: ', extract('/destinations/([^/?#]+)', 1, path)), path startswith '/services', 'Services', path startswith '/about', 'About', path startswith '/moodboards', 'Moodboards', path startswith '/portfolio', 'Portfolio', isempty(path), 'Unknown', path) | summarize ['Entry Sessions'] = dcount(tostring(customDimensions.sessionId)) by ['Landing Page'] = PageLabel | order by ['Entry Sessions'] desc | take 20",
+        "size": 0,
+        "title": "Entry (Landing) Pages",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": { "xAxis": "Landing Page", "yAxis": ["Entry Sessions"] }
+      },
+      "name": "entry-pages"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | summarize Views = count() by sid = tostring(customDimensions.sessionId) | summarize Total = count(), Bounced = countif(Views <= 1) | extend ['Bounce Rate %'] = round(100.0 * Bounced / Total, 1) | project ['Total Sessions'] = Total, ['Bounced (1 page)'] = Bounced, ['Bounce Rate %']",
+        "size": 4,
+        "title": "Bounce Rate (single-page sessions)",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "tiles",
+        "tileSettings": { "showBorder": true, "size": "auto" }
+      },
+      "name": "bounce-rate"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where timestamp {TimeRange} | summarize EventsInSession = count() by sid = tostring(customDimensions.sessionId) | extend Bucket = case(EventsInSession <= 2, '1-2', EventsInSession <= 5, '3-5', EventsInSession <= 10, '6-10', EventsInSession <= 20, '11-20', '20+') | summarize Sessions = count() by Bucket | extend SortKey = case(Bucket == '1-2', 1, Bucket == '3-5', 2, Bucket == '6-10', 3, Bucket == '11-20', 4, 5) | order by SortKey asc | project ['Events per Session'] = Bucket, Sessions",
+        "size": 1,
+        "title": "Engagement Depth (events per session)",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": { "xAxis": "Events per Session", "yAxis": ["Sessions"] }
+      },
+      "name": "events-per-session"
+    },
+
+    { "type": 1, "content": { "json": "## C · Acquisition\nWhere first-touch sessions come from." }, "name": "section-acq" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | extend dom = tostring(customDimensions.referrerDomain) | where isnotempty(dom) | summarize Sessions = dcount(tostring(customDimensions.sessionId)) by ['Referrer Domain'] = dom | order by Sessions desc | take 20",
+        "size": 0,
+        "title": "External Referrer Domains",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": { "formatters": [ { "columnMatch": "Sessions", "formatter": 4, "formatOptions": { "palette": "orange" } } ] }
+      },
+      "name": "referrers"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | where tostring(customDimensions.isEntry) == 'true' | extend src = iif(isnotempty(tostring(customDimensions.referrerDomain)), 'Referred', 'Direct / Unknown') | summarize Sessions = dcount(tostring(customDimensions.sessionId)) by src",
+        "size": 3,
+        "title": "Direct vs Referred (entry sessions)",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "piechart"
+      },
+      "name": "direct-vs-referred"
+    },
+
+    { "type": 1, "content": { "json": "## D · Conversion Funnel\nThe headline: how sessions move from visit to enquiry (session-distinct)." }, "name": "section-funnel" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where timestamp {TimeRange} | summarize ['All Visitors'] = dcount(tostring(customDimensions.sessionId)), ['Chatbot Opened'] = dcountif(tostring(customDimensions.sessionId), name == 'ChatbotOpened'), ['Chatbot Engaged'] = dcountif(tostring(customDimensions.sessionId), name == 'ChatbotFirstMessage'), ['Contact Viewed'] = dcountif(tostring(customDimensions.sessionId), name == 'PageView' and tostring(customDimensions.path) == '/contact'), ['Form Started'] = dcountif(tostring(customDimensions.sessionId), name == 'ContactFormStarted'), ['CTA Clicked'] = dcountif(tostring(customDimensions.sessionId), name == 'CtaClick'), ['Enquiry Submitted'] = dcountif(tostring(customDimensions.sessionId), name == 'EnquirySubmitted')",
+        "size": 3,
+        "title": "Funnel — sessions reaching each stage",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": { "columnMatch": "column", "formatter": 1 },
+          "leftContent": { "columnMatch": "value", "formatter": 12, "formatOptions": { "palette": "auto" } },
+          "showBorder": true,
+          "size": "auto"
+        }
+      },
+      "name": "funnel-tiles"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where timestamp {TimeRange} | summarize s0 = dcount(tostring(customDimensions.sessionId)), s1 = dcountif(tostring(customDimensions.sessionId), name == 'ChatbotOpened'), s2 = dcountif(tostring(customDimensions.sessionId), name == 'ChatbotFirstMessage'), s3 = dcountif(tostring(customDimensions.sessionId), name == 'PageView' and tostring(customDimensions.path) == '/contact'), s4 = dcountif(tostring(customDimensions.sessionId), name == 'ContactFormStarted'), s5 = dcountif(tostring(customDimensions.sessionId), name == 'EnquirySubmitted') | extend total = s0 | project Stage = pack_array('1. All Visitors', '2. Chatbot Opened', '3. Chatbot Engaged', '4. Contact Viewed', '5. Form Started', '6. Enquiry Submitted'), Sessions = pack_array(s0, s1, s2, s3, s4, s5), total | mv-expand Stage to typeof(string), Sessions to typeof(long) | extend ['% of Visitors'] = strcat(tostring(round(100.0 * Sessions / total, 1)), '%') | project Stage, Sessions, ['% of Visitors']",
+        "size": 0,
+        "title": "Funnel — stage-to-stage conversion",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            { "columnMatch": "Sessions", "formatter": 4, "formatOptions": { "palette": "blue" } }
+          ]
+        }
+      },
+      "name": "funnel-rates"
+    },
+
+    { "type": 1, "content": { "json": "## E · CTA Channel Performance\nPhone / WhatsApp / Email clicks across the site." }, "name": "section-cta" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'CtaClick' | where timestamp {TimeRange} | summarize Clicks = count(), Sessions = dcount(tostring(customDimensions.sessionId)) by ['Channel'] = tostring(customDimensions.channel), ['Location'] = tostring(customDimensions.location) | order by Clicks desc",
+        "size": 0,
+        "title": "CTA Clicks — channel x location",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": { "formatters": [ { "columnMatch": "Clicks", "formatter": 4, "formatOptions": { "palette": "green" } } ] }
+      },
+      "name": "cta-matrix"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'CtaClick' | where timestamp {TimeRange} | summarize Clicks = count() by ['Channel'] = tostring(customDimensions.channel) | order by Clicks desc",
+        "size": 3,
+        "title": "Clicks by Channel",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "piechart"
+      },
+      "name": "cta-channel-pie"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'CtaClick' | where timestamp {TimeRange} | summarize Clicks = count() by bin(timestamp, 1d), Channel = tostring(customDimensions.channel) | order by timestamp asc",
+        "size": 3,
+        "title": "CTA Channel Trend",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "timechart",
+        "chartSettings": { "xAxis": "timestamp" }
+      },
+      "name": "cta-trend"
+    },
+
+    { "type": 1, "content": { "json": "## F · Enquiries\nThe form submissions themselves (server-side `EnquirySubmitted`)." }, "name": "section-enq" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'EnquirySubmitted' | where timestamp {TimeRange} | summarize Total = count(), HighIntent = countif(tostring(customDimensions.intentLevel) == 'high'), ChatbotAssisted = countif(tostring(customDimensions.hasChatbotContext) == 'true'), WithDestination = countif(isnotempty(tostring(customDimensions.destination))) | project ['Total Enquiries'] = Total, ['High Intent'] = HighIntent, ['Chatbot Assisted'] = ChatbotAssisted, ['Shared Destination'] = WithDestination",
+        "size": 3,
+        "title": "Enquiry KPIs",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": { "columnMatch": "column", "formatter": 1 },
+          "leftContent": { "columnMatch": "value", "formatter": 12, "formatOptions": { "palette": "auto" } },
+          "showBorder": true,
+          "size": "auto"
+        }
+      },
+      "name": "enq-kpis"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'EnquirySubmitted' | where timestamp {TimeRange} | extend raw = tostring(customDimensions.sourcePagePath) | extend PageLabel = case(raw endswith '/contact' or raw == '/contact', 'Direct to Contact', raw == '/' or raw endswith '.com' or raw endswith '.com/', 'Homepage', raw contains '/destinations/', strcat('Destination: ', extract('/destinations/([^/?#]+)', 1, raw)), raw contains '/services', 'Services', raw contains '/moodboards', 'Moodboards', raw contains '/about', 'About', raw contains '/portfolio', 'Portfolio', isempty(raw), 'Unknown / Direct', raw) | summarize Enquiries = count(), HighIntent = countif(tostring(customDimensions.intentLevel) == 'high') by ['Source Page'] = PageLabel | order by Enquiries desc",
+        "size": 0,
+        "title": "Enquiries by Source Page",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": { "xAxis": "Source Page", "yAxis": ["Enquiries"] }
+      },
+      "name": "enq-by-source"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'EnquirySubmitted' | where timestamp {TimeRange} | extend Level = case(tostring(customDimensions.intentLevel) == 'high', 'High', tostring(customDimensions.intentLevel) == 'medium', 'Medium', tostring(customDimensions.intentLevel) == 'low', 'Low', 'No Chatbot') | summarize Count = count() by Level",
+        "size": 3,
+        "title": "Enquiry Intent Distribution",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "piechart"
+      },
+      "name": "enq-intent"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'EnquirySubmitted' | where timestamp {TimeRange} | extend dest = tostring(customDimensions.destination) | where isnotempty(dest) | summarize Enquiries = count() by ['Destination'] = dest | order by Enquiries desc | take 20",
+        "size": 3,
+        "title": "Top Destinations Requested",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": { "xAxis": "Destination", "yAxis": ["Enquiries"] }
+      },
+      "name": "enq-destinations"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'EnquirySubmitted' | where timestamp {TimeRange} | extend SourcePage = tostring(customDimensions.sourcePagePath), Destination = tostring(customDimensions.destination), WeddingDate = tostring(customDimensions.weddingDate), IntentLevel = tostring(customDimensions.intentLevel), ChatbotAssisted = tostring(customDimensions.hasChatbotContext), BudgetTier = tostring(customDimensions.budgetTier), SessionId = tostring(customDimensions.sessionId) | project Timestamp = timestamp, SourcePage, Destination, WeddingDate, IntentLevel, ChatbotAssisted, BudgetTier, SessionId | order by Timestamp desc | take 100",
+        "size": 0,
+        "title": "Recent Enquiries (last 100)",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            { "columnMatch": "IntentLevel", "formatter": 18, "formatOptions": { "thresholdsOptions": "colors", "thresholdsGrid": [ { "operator": "==", "thresholdValue": "high", "representation": "green", "text": "HIGH" }, { "operator": "==", "thresholdValue": "medium", "representation": "orange", "text": "MED" }, { "operator": "Default", "thresholdValue": null, "representation": "gray", "text": "{0}" } ] } }
+          ]
+        }
+      },
+      "name": "enq-recent"
+    },
+
+    { "type": 1, "content": { "json": "## G · Chatbot Engagement\nHow the assistant drives interest and enquiries." }, "name": "section-chat" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where timestamp {TimeRange} | summarize ['Chatbot Opened'] = dcountif(tostring(customDimensions.sessionId), name == 'ChatbotOpened'), ['Sent a Message'] = dcountif(tostring(customDimensions.sessionId), name == 'ChatbotFirstMessage'), ['Chat-Assisted Enquiries'] = dcountif(tostring(customDimensions.sessionId), name == 'EnquirySubmitted' and tostring(customDimensions.hasChatbotContext) == 'true')",
+        "size": 3,
+        "title": "Chatbot Funnel",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": { "columnMatch": "column", "formatter": 1 },
+          "leftContent": { "columnMatch": "value", "formatter": 12, "formatOptions": { "palette": "auto" } },
+          "showBorder": true,
+          "size": "auto"
+        }
+      },
+      "name": "chat-funnel"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'ChatbotOpened' | where timestamp {TimeRange} | extend p = tostring(customDimensions.sourcePagePath) | summarize Opens = count(), Sessions = dcount(tostring(customDimensions.sessionId)) by ['Opened From Page'] = p | order by Opens desc | take 15",
+        "size": 0,
+        "title": "Chatbot Opens by Page",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": { "formatters": [ { "columnMatch": "Opens", "formatter": 4, "formatOptions": { "palette": "blue" } } ] }
+      },
+      "name": "chat-opens-by-page"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'EnquirySubmitted' | where timestamp {TimeRange} | extend cities = tostring(customDimensions.citiesExplored) | where isnotempty(cities) | mv-expand City = split(cities, ', ') | extend City = trim(' ', tostring(City)) | where isnotempty(City) | summarize Mentions = count() by City | order by Mentions desc | take 20",
+        "size": 0,
+        "title": "Cities Explored in Chatbot (from enquiries)",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": { "formatters": [ { "columnMatch": "Mentions", "formatter": 4, "formatOptions": { "palette": "purple" } } ] }
+      },
+      "name": "chat-cities"
+    },
+
+    { "type": 1, "content": { "json": "## H · Tools\nHashtag generator usage." }, "name": "section-tools" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'HashtagGenerated' | where timestamp {TimeRange} | summarize Generations = count(), Sessions = dcount(tostring(customDimensions.sessionId)) by ['Vibe'] = tostring(customDimensions.vibe) | order by Generations desc",
+        "size": 3,
+        "title": "Hashtag Generations by Vibe",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": { "xAxis": "Vibe", "yAxis": ["Generations"] }
+      },
+      "name": "hashtag-vibe"
+    },
+
+    { "type": 1, "content": { "json": "## I · Timing\nWhen visitors are active (UTC)." }, "name": "section-timing" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | summarize Views = count() by ['Hour (UTC)'] = hourofday(timestamp) | order by ['Hour (UTC)'] asc",
+        "size": 3,
+        "title": "Page Views by Hour of Day",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": { "xAxis": "Hour (UTC)", "yAxis": ["Views"] }
+      },
+      "name": "timing-hour"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'PageView' | where timestamp {TimeRange} | extend dow = dayofweek(timestamp) | extend Day = case(dow == 0d, 'Sun', dow == 1d, 'Mon', dow == 2d, 'Tue', dow == 3d, 'Wed', dow == 4d, 'Thu', dow == 5d, 'Fri', 'Sat') | summarize Views = count() by Day, dow | order by dow asc | project Day, Views",
+        "size": 3,
+        "title": "Page Views by Day of Week",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": { "xAxis": "Day", "yAxis": ["Views"] }
+      },
+      "name": "timing-dow"
+    },
+
+    { "type": 1, "content": { "json": "## J · Quality / Errors\nUncaught client-side errors." }, "name": "section-errors" },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'ClientError' | where timestamp {TimeRange} | summarize Errors = count() by bin(timestamp, 1d) | order by timestamp asc",
+        "size": 0,
+        "title": "Client Errors Over Time",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "timechart",
+        "chartSettings": { "xAxis": "timestamp", "yAxis": ["Errors"] }
+      },
+      "name": "errors-trend"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents | where name == 'ClientError' | where timestamp {TimeRange} | summarize Count = count(), LastSeen = max(timestamp), Sessions = dcount(tostring(customDimensions.sessionId)) by ['Message'] = tostring(customDimensions.message), ['Source'] = tostring(customDimensions.source) | order by Count desc | take 30",
+        "size": 0,
+        "title": "Top Client Errors",
+        "timeContext": { "durationMs": 0 },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": { "formatters": [ { "columnMatch": "Count", "formatter": 4, "formatOptions": { "palette": "red" } } ] }
+      },
+      "name": "errors-top"
+    }
+  ],
+  "fallbackResourceIds": [],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

@@ -157,7 +157,7 @@ export async function POST(req) {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { firstName, lastName, email, phone, destination, weddingDate, message, chatbotContext, recaptchaToken, sourcePagePath, referrerUrl } = body ?? {};
+  const { firstName, lastName, email, phone, destination, weddingDate, message, chatbotContext, recaptchaToken, sourcePagePath, referrerUrl, sessionId, userId } = body ?? {};
 
   if (!firstName?.trim())
     return Response.json({ error: "firstName is required." }, { status: 400 });
@@ -288,7 +288,8 @@ export async function POST(req) {
       citiesExplored:     chatbotContext?.cities              || [],
       venuesViewed:       chatbotContext?.venues_viewed       || [],
       budgetTier:         chatbotContext?.budget_tier         || "",
-      sessionId:          chatbotContext?.session_id          || "",
+      sessionId:          sessionId || chatbotContext?.session_id || "",
+      userId:             userId || "",
     });
 
     // Confirmation email to the enquirer
