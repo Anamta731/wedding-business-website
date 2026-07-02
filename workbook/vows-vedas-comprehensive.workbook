@@ -129,7 +129,12 @@
         "queryType": 0,
         "resourceType": "microsoft.insights/components",
         "visualization": "tiles",
-        "tileSettings": { "showBorder": true, "size": "auto" }
+        "tileSettings": {
+          "titleContent": { "columnMatch": "column", "formatter": 1 },
+          "leftContent": { "columnMatch": "value", "formatter": 12, "formatOptions": { "palette": "auto" } },
+          "showBorder": true,
+          "size": "auto"
+        }
       },
       "name": "bounce-rate"
     },
