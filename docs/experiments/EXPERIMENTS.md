@@ -25,7 +25,7 @@ for what may be changed.
 
 | # | Date opened | Hypothesis (one line) | Files | Primary metric | Baseline | Target | Window | PR | Status | Result / verdict |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 2026-07-03 | Sticky nav CTA "Begin Your Journey" is abstract about what happens next; aligning it with the hero's proven "Plan Your Wedding" phrasing should reduce ambiguity and lift session→contact click-through | src/components/Navigation.js | session_to_contact rate | 0% (7d) / 0% (30d) | ≥12% | 14d | TBD | OPEN | — |
+| 1 | 2026-07-03 | Sticky nav CTA "Begin Your Journey" is abstract about what happens next; aligning it with the hero's proven "Plan Your Wedding" phrasing should reduce ambiguity and lift session→contact click-through | src/components/Navigation.js | session_to_contact rate | 0% (7d) / 0% (30d) | ≥12% | 14d | #7 | OPEN | — |
 
 <!--
 Row template (copy, fill, remove the comment):
