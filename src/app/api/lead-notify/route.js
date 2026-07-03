@@ -55,6 +55,7 @@ export async function POST(req) {
     name                 = "",
     contact              = "",
     source               = "",
+    is_test              = false,
   } = body ?? {};
 
   if (typeof accumulated_intent !== "object" || Array.isArray(accumulated_intent))
@@ -92,7 +93,7 @@ export async function POST(req) {
     const emailMessage = {
       senderAddress: process.env.AZURE_SENDER_ADDRESS,
       content: {
-        subject: `[Chatbot Lead] ${intent_level?.toUpperCase() || "LOW"} Intent${name ? ` — ${name}` : ""} — ${cities.length > 0 ? cities.join(", ") : "No destination yet"}`,
+        subject: `${is_test ? "[TEST] " : ""}[Chatbot Lead] ${intent_level?.toUpperCase() || "LOW"} Intent${name ? ` — ${name}` : ""} — ${cities.length > 0 ? cities.join(", ") : "No destination yet"}`,
         html: `
           <div style="font-family:Georgia,serif;max-width:640px;margin:0 auto;color:#1A1408;">
             <div style="background:#1A1408;padding:22px 32px;text-align:center;">

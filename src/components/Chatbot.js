@@ -123,6 +123,7 @@ export default function Chatbot() {
   const sessionIdRef    = useRef(`sess_${Date.now().toString(36)}`);
   const leadFiredRef    = useRef(false);
   const firstMsgFiredRef = useRef(false);
+  const autoLeadFiredRef = useRef(false);
 
   const resetConversation = () => {
     setMessages([INITIAL_MESSAGE]);
@@ -137,6 +138,7 @@ export default function Chatbot() {
     setLeadSubmitted(false);
     setLeadError("");
     leadFiredRef.current = false;
+    autoLeadFiredRef.current = false;
   };
 
   useEffect(() => {
@@ -191,19 +193,24 @@ export default function Chatbot() {
     try { sessionStorage.setItem("chatbot_context", JSON.stringify(ctx)); } catch {}
   };
 
-  const fireLeadNotify = () => {
+  const fireLeadNotify = (overrideIntent = null) => {
+    const isTest = typeof window !== "undefined" && (
+      window.location.hostname === "localhost" ||
+      new URLSearchParams(window.location.search).get("test") === "1"
+    );
     fetch("/api/lead-notify", {
       method:    "POST",
       headers:   { "Content-Type": "application/json" },
       keepalive: true,
       body: JSON.stringify({
         source:               "chatbot",
-        accumulated_intent:   accIntent,
+        accumulated_intent:   overrideIntent || accIntent,
         conversation_history: messages
           .filter(m => m.role !== "typing" && m.text)
           .slice(-12)
           .map(m => ({ role: m.role === "bot" ? "assistant" : "user", content: m.text })),
         session_id: sessionIdRef.current,
+        is_test:    isTest,
       }),
     }).catch(() => {});
   };
@@ -289,6 +296,7 @@ export default function Chatbot() {
     setMessages(prev => [...prev, userMsg, botMsg]);
 
     abortRef.current = new AbortController();
+    let latestIntent = accIntent;
 
     try {
       const res = await fetch("/api/chat", {
@@ -331,6 +339,7 @@ export default function Chatbot() {
               });
             } else if (event.type === "meta") {
               if (event.accumulated_intent) {
+                latestIntent = event.accumulated_intent;
                 setAccIntent(event.accumulated_intent);
                 if (
                   (event.accumulated_intent.intent_level === "high" ||
@@ -354,6 +363,11 @@ export default function Chatbot() {
                 };
                 return updated;
               });
+              // Auto-fire intent email after first complete exchange, no click needed
+              if (!autoLeadFiredRef.current) {
+                autoLeadFiredRef.current = true;
+                fireLeadNotify(latestIntent);
+              }
             } else if (event.type === "error") {
               setMessages(prev => {
                 const updated = [...prev];
