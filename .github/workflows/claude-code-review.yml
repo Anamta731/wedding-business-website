@@ -1,28 +1,23 @@
 name: Claude Code Review
 
+# Independent AI review on every PR — complements the human merge gate. The
+# improvement agent (docs/agent/) AUTHORS PRs; this REVIEWS them, so the author is
+# never the only check. Advisory only: Claude cannot approve or merge.
+#
+# Auth: claude_code_oauth_token (set up by `claude /install-github-app` as the
+# CLAUDE_CODE_OAUTH_TOKEN repo secret) — no API key, no OIDC wizard required.
+
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      pull-requests: write
+      issues: write
       id-token: write
 
     steps:
@@ -32,13 +27,39 @@ jobs:
           fetch-depth: 1
 
       - name: Run Claude Code Review
-        id: claude-review
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} in
+            ${{ github.repository }}. The branch is checked out; read the diff with
+            `gh pr diff ${{ github.event.pull_request.number }}` and
+            `gh pr view ${{ github.event.pull_request.number }}`, and open files as
+            needed.
 
+            Be concise and specific. Priorities, in order:
+            1. Correctness bugs / logic errors in the diff.
+            2. Scope: improvement-agent PRs (branch prefix `agent/exp-`) must stay
+               within docs/agent/improvement-agent-scope.md — COPY TEXT ONLY. Reject
+               on sight any edit to telemetry (src/lib/telemetry.js,
+               src/lib/clientTelemetry.js, PageTracker.js, /api/track, or any
+               trackClient/trackEvent call or event name), contact-API logic /
+               recipient emails / reCAPTCHA, contact-form field name/id attributes,
+               GSAP-bound markup structure, src/lib/* logic, infra/**, workbook/**,
+               secrets, or .github/workflows/**.
+            3. Copy quality: on-brand per BRAND_GUIDELINES.md (refined, warm,
+               heritage, understated — never boastful/corporate) and no unkeepable
+               promises (no invented response-time SLAs beyond the existing 24–48h,
+               no fake "free"/guarantee/discount claims).
+            4. Home-page process steps are duplicated (desktop + mobile) in
+               src/app/page.js — if one copy changed, flag any un-mirrored twin.
+            5. Security issues and obvious performance regressions.
+
+            You MUST post the review to GitHub (do not just print it):
+            - a concise top-level summary via
+              `gh pr comment ${{ github.event.pull_request.number }} --body "..."`
+            - any line-specific issues via the inline-comment tool.
+            If the PR looks good, still post a short approving summary comment.
+          claude_args: '--allowed-tools "Read,Grep,Glob,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment"'
