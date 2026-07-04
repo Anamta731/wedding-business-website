@@ -95,14 +95,17 @@ jobs:
 
             4. Append a row to docs/experiments/EXPERIMENTS.md (date, hypothesis,
                files, primary metric, baseline from the snapshot, target, 14-day
-               window, Status OPEN). Do NOT commit the snapshot JSON files (they live
-               under the runner temp dir, outside the repo).
+               window, Status OPEN). In the PR column put the BRANCH SLUG (e.g.
+               agent/exp-...), NOT a PR number. Do NOT commit the snapshot JSON files
+               (they live under the runner temp dir, outside the repo).
 
-            5. Create branch agent/exp-<YYYY-MM-DD>-<slug>, commit, and open exactly
-               ONE PR with `gh pr create --base main --assignee nik-mci` using the
-               body shape in the prompt doc (Evidence -> Hypothesis -> Primary metric
-               -> Window -> Rollback). The FIRST line of the PR body MUST be
+            5. Create branch agent/exp-<YYYY-MM-DD>-<slug>. Make EXACTLY ONE commit
+               (the copy change + the ledger row together), push it ONCE, then open
+               exactly ONE PR with `gh pr create --base main --assignee nik-mci` using
+               the body shape in the prompt doc (Evidence -> Hypothesis -> Primary
+               metric -> Window -> Rollback). The FIRST line of the PR body MUST be
                "cc @nik-mci — new improvement-agent experiment for review." so GitHub
-               notifies the maintainer. NEVER merge, never push to main, never deploy.
-               Then stop.
+               notifies the maintainer. Do NOT push any further commits after opening
+               the PR (a second push re-triggers CI and races the preview deploy).
+               NEVER merge, never push to main, never deploy. Then stop.
           claude_args: '--allowed-tools "Read,Grep,Glob,Edit,Write,Bash"'

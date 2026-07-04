@@ -28,6 +28,8 @@ for what may be changed.
 | — | — | _(no experiments yet — the first cycle will append here)_ | — | — | — | — | — | — | — | — |
 
 <!--
-Row template (copy, fill, remove the comment):
-| 1 | 2026-07-10 | Reframe Send My Enquiry CTA around benefit + no-obligation to lift form→submit | src/app/contact/page.js | form_to_enquiry rate | 25% (7d) / 27% (30d) | ≥35% | 14d | #NN | OPEN | — |
+Row template (copy, fill, remove the comment).
+PR column = the branch slug (agent/exp-…), NOT a PR number — recording the number
+would require a second commit that re-triggers CI (see improvement-agent-prompt.md §6):
+| 1 | 2026-07-10 | Reframe Send My Enquiry CTA around benefit + no-obligation to lift form→submit | src/app/contact/page.js | form_to_enquiry rate | 25% (7d) / 27% (30d) | ≥35% | 14d | agent/exp-2026-07-10-form-submit-cta | OPEN | — |
 -->

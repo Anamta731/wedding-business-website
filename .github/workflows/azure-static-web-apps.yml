@@ -9,6 +9,15 @@ on:
     branches:
       - main
 
+# Serialize deploys per PR / per branch so two rapid pull_request events (e.g. an
+# improvement-agent copy commit + a follow-up ledger commit) don't race on the same
+# Static Web Apps preview environment ("No matching Static Web App environment was
+# found"). cancel-in-progress only for PR previews — a production (push-to-main)
+# deploy is never cancelled mid-flight; concurrent main deploys queue instead.
+concurrency:
+  group: swa-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 permissions:
   id-token: write
   contents: read
