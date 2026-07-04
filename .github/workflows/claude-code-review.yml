@@ -32,6 +32,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The improvement agent authors its PRs as a bot (claude[bot]). Without this,
+          # claude-code-action's bot-loop guard refuses to review them — skipping the
+          # exact PRs this independent review exists to check. Allow all bots so agent
+          # (and e.g. dependabot) PRs still get reviewed. Safe: the review triggers only
+          # on pull_request events and just posts a comment, so it cannot re-trigger itself.
+          allowed_bots: "*"
           prompt: |
             Review pull request #${{ github.event.pull_request.number }} in
             ${{ github.repository }}. The branch is checked out; read the diff with
