@@ -139,7 +139,7 @@ export default function Navigation() {
             }`}
           >
             <span className="relative z-10 group-hover:text-white transition-colors duration-300">
-              Begin Your Journey
+              Plan Your Wedding
             </span>
             <div className="absolute inset-0 bg-gold translate-x-[-101%] group-hover:translate-x-0 transition-transform duration-300 ease-out" />
           </Link>
@@ -260,7 +260,7 @@ export default function Navigation() {
             href="/contact"
             className="flex-1 text-center text-[10px] uppercase tracking-[0.22em] font-medium px-4 py-3 border border-gold text-ink hover:bg-gold hover:text-white transition-colors duration-300"
           >
-            Begin Your Journey
+            Plan Your Wedding
           </Link>
         </div>
       </div>
