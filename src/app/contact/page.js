@@ -134,6 +134,7 @@ export default function ContactPage() {
           destination: form.destination.value,
           weddingDate: form.estimatedWeddingDate.value,
           message: form.message.value,
+          botField: form.company_website.value, // honeypot — empty for real users
           chatbotContext,
           recaptchaToken,
           sourcePagePath,
@@ -183,6 +184,28 @@ export default function ContactPage() {
           <GoldDivider flip className="mb-10 md:mb-12 opacity-0 translate-y-5 animate-fadeUp-delayed" />
 
           <form id="contact-form" onSubmit={handleSubmit} onFocusCapture={handleFormStart} className="pt-2">
+
+            {/*
+              Honeypot — invisible to humans, catnip for bots. A real visitor can't
+              see, tab to, or autofill this (off-screen, tabindex -1, aria-hidden,
+              non-standard name that autofill ignores, autocomplete off). Bots parse
+              the raw DOM and fill every field, so any value here flags the
+              submission. We never block on it — the server only marks it for review.
+            */}
+            <div
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", top: "auto", width: "1px", height: "1px", overflow: "hidden" }}
+            >
+              <label htmlFor="company_website">Do not fill this field</label>
+              <input
+                type="text"
+                id="company_website"
+                name="company_website"
+                tabIndex={-1}
+                autoComplete="off"
+                defaultValue=""
+              />
+            </div>
 
             {/* ── Cluster 1: Identity ── */}
             <div className="space-y-7">

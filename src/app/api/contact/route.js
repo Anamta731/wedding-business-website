@@ -151,13 +151,42 @@ const CC_RECIPIENTS = [
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Known disposable / throwaway email domains. Real couples don't use these;
+// bots and testers do. Used only to FLAG (never block) a submission.
+const DISPOSABLE_DOMAINS = new Set([
+  "mailinator.com", "guerrillamail.com", "guerrillamailblock.com", "sharklasers.com",
+  "grr.la", "spam4.me", "10minutemail.com", "tempmail.com", "temp-mail.org",
+  "throwawaymail.com", "yopmail.com", "trashmail.com", "getnada.com", "nada.email",
+  "dispostable.com", "maildrop.cc", "fakeinbox.com", "mailnesia.com", "mytemp.email",
+  "tempmailo.com", "emailondeck.com", "moakt.com", "tempr.email", "mohmal.com",
+  "mailcatch.com", "inboxkitten.com", "discard.email", "spamgourmet.com",
+]);
+
+// Lead-safe spam heuristics: returns a list of human-readable reasons a submission
+// looks automated. NEVER used to reject — the caller only tags the email for review,
+// so a false positive can never cost a real lead.
+function detectSpam({ botField, email, recaptcha }) {
+  const reasons = [];
+  if (botField && String(botField).trim() !== "") {
+    reasons.push("Honeypot field was filled — only bots do this");
+  }
+  const domain = (email.split("@")[1] || "").toLowerCase().trim();
+  if (domain && DISPOSABLE_DOMAINS.has(domain)) {
+    reasons.push(`Disposable email domain (${domain})`);
+  }
+  if (recaptcha?.lowScore) {
+    reasons.push(`Low reCAPTCHA score (${recaptcha.score})`);
+  }
+  return reasons;
+}
+
 export async function POST(req) {
   let body;
   try { body = await req.json(); } catch {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { firstName, lastName, email, phone, destination, weddingDate, message, chatbotContext, recaptchaToken, sourcePagePath, referrerUrl, sessionId, userId } = body ?? {};
+  const { firstName, lastName, email, phone, destination, weddingDate, message, botField, chatbotContext, recaptchaToken, sourcePagePath, referrerUrl, sessionId, userId } = body ?? {};
 
   if (!firstName?.trim())
     return Response.json({ error: "firstName is required." }, { status: 400 });
@@ -184,6 +213,14 @@ export async function POST(req) {
     console.warn("Contact reCAPTCHA low score (allowed):", recaptcha.score);
   }
 
+  // Flag-first spam detection — tags suspicious submissions but never blocks them,
+  // so a genuine enquiry is never lost. The team can filter/ignore flagged mail.
+  const spamReasons = detectSpam({ botField, email: email.trim(), recaptcha });
+  const isFlagged = spamReasons.length > 0;
+  if (isFlagged) {
+    console.warn("Contact submission flagged (allowed):", spamReasons.join("; "));
+  }
+
   try {
 
     const client = getEmailClient();
@@ -192,7 +229,7 @@ export async function POST(req) {
       senderAddress: process.env.AZURE_SENDER_ADDRESS,
       replyTo: [{ address: email, displayName: `${firstName} ${lastName}` }],
       content: {
-        subject: `New Wedding Enquiry — ${firstName} ${lastName}`,
+        subject: `${isFlagged ? "[POSSIBLE SPAM] " : ""}New Wedding Enquiry — ${firstName} ${lastName}`,
         html: `
           <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1A1408;">
             <div style="background: #1A1408; padding: 24px 32px; text-align: center;">
@@ -201,6 +238,13 @@ export async function POST(req) {
               </h2>
             </div>
             <div style="padding: 32px; background: #FDFAF5; border: 1px solid #EDE8DC;">
+              ${isFlagged ? `
+              <div style="background:#FDECEA;border-left:4px solid #C0392B;padding:12px 16px;margin-bottom:22px;border-radius:0 4px 4px 0;">
+                <p style="margin:0 0 6px;font-size:12px;color:#922B21;font-weight:700;">⚠ Possible spam — flagged for review, NOT blocked. Verify before acting.</p>
+                <ul style="margin:6px 0 0;padding-left:18px;font-size:12px;color:#922B21;line-height:1.6;">
+                  ${spamReasons.map(r => `<li>${escHtml(r)}</li>`).join("")}
+                </ul>
+              </div>` : ""}
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding:10px 0;border-bottom:1px solid #EDE8DC;color:#9A8F7E;font-size:11px;text-transform:uppercase;letter-spacing:2px;width:38%;">Name</td>
@@ -284,6 +328,8 @@ export async function POST(req) {
       weddingDate:        weddingDate    || "",
       hasMessage:         !!message,
       hasChatbotContext:  !!chatbotContext,
+      flaggedSpam:        isFlagged,
+      spamReasons:        spamReasons,
       intentLevel:        chatbotContext?.intent_level        || "none",
       citiesExplored:     chatbotContext?.cities              || [],
       venuesViewed:       chatbotContext?.venues_viewed       || [],
@@ -292,9 +338,13 @@ export async function POST(req) {
       userId:             userId || "",
     });
 
-    // Confirmation email to the enquirer
+    // Confirmation email to the enquirer.
+    // Skipped for flagged submissions: the address may be forged/disposable, and
+    // auto-replying to it would make us a spam relay (backscatter). The team is
+    // still notified above, so a mis-flagged real lead is never dropped — they'll
+    // simply get a personal reply instead of the instant auto-confirmation.
     let confirmationError = null;
-    try {
+    if (!isFlagged) try {
       const confirmationMessage = {
         senderAddress: process.env.AZURE_SENDER_ADDRESS,
         replyTo: [{ address: "info@vowsandvedas.com", displayName: "Vows & Vedas" }],
