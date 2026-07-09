@@ -105,7 +105,7 @@ export async function POST(req) {
             ${hasNoIntent ? `
             <div style="background:#FFF8E1;border-left:4px solid #FFA000;padding:12px 16px;">
               <p style="margin:0;font-size:12px;color:#7A5200;font-weight:600;">
-                ⚠ No intent captured — user clicked to contact before sharing any venue or destination preferences.
+                ⚠ Early discovery — no venue or destination intent captured yet.
               </p>
             </div>` : ""}
 

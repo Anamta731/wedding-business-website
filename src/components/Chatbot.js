@@ -117,13 +117,14 @@ export default function Chatbot() {
   const [leadContact, setLeadContact]     = useState("");
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [leadError, setLeadError]         = useState("");
-  const messagesEndRef  = useRef(null);
-  const inputRef        = useRef(null);
-  const abortRef        = useRef(null);
-  const sessionIdRef    = useRef(`sess_${Date.now().toString(36)}`);
-  const leadFiredRef    = useRef(false);
+  const messagesEndRef   = useRef(null);
+  const inputRef         = useRef(null);
+  const abortRef         = useRef(null);
+  const sessionIdRef     = useRef(`sess_${Date.now().toString(36)}`);
+  const leadFiredRef     = useRef(false);
   const firstMsgFiredRef = useRef(false);
   const autoLeadFiredRef = useRef(false);
+  const latestMessagesRef = useRef([INITIAL_MESSAGE]);
 
   const resetConversation = () => {
     setMessages([INITIAL_MESSAGE]);
@@ -154,6 +155,7 @@ export default function Chatbot() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    latestMessagesRef.current = messages;
   }, [messages]);
 
   useEffect(() => {
@@ -205,7 +207,7 @@ export default function Chatbot() {
       body: JSON.stringify({
         source:               "chatbot",
         accumulated_intent:   overrideIntent || accIntent,
-        conversation_history: messages
+        conversation_history: latestMessagesRef.current
           .filter(m => m.role !== "typing" && m.text)
           .slice(-12)
           .map(m => ({ role: m.role === "bot" ? "assistant" : "user", content: m.text })),
@@ -242,7 +244,7 @@ export default function Chatbot() {
         name:                 leadName.trim(),
         contact:              leadContact.trim(),
         accumulated_intent:   accIntent,
-        conversation_history: messages
+        conversation_history: latestMessagesRef.current
           .filter(m => m.role !== "typing" && m.text)
           .slice(-12)
           .map(m => ({ role: m.role === "bot" ? "assistant" : "user", content: m.text })),
