@@ -1,9 +1,9 @@
-name: Improvement Agent (weekly)
+name: Improvement Agent
 
 # The autonomous "author" half of the analytics -> improvement loop for Vows &
-# Vedas. Weekly, Claude reads the enquiry funnel from App Insights, picks the
-# single biggest in-scope leak, makes ONE scoped copy change (per docs/agent/),
-# and opens ONE PR assigned to nik-mci for the Friday review. It NEVER merges or
+# Vedas. Every ~3 days, Claude reads the enquiry funnel from App Insights, picks
+# the single biggest in-scope leak, makes ONE scoped copy change (per docs/agent/),
+# and opens ONE PR assigned to nik-mci for review. It NEVER merges or
 # deploys — the Claude PR reviewer + a human are the gate.
 #
 # Auth model (no new secrets beyond the Claude token):
@@ -17,7 +17,7 @@ name: Improvement Agent (weekly)
 
 on:
   schedule:
-    - cron: '0 6 * * 5'   # Fridays 06:00 UTC (~11:30 IST) — PR is ready for the Friday review
+    - cron: '0 6 */3 * *'   # every 3rd day at 06:00 UTC (~11:30 IST); short gap at month boundaries (cron can't do true 72h)
   workflow_dispatch:        # manual trigger for testing / first-run calibration
 
 permissions:
