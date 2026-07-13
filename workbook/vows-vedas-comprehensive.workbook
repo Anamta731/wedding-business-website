@@ -5,7 +5,7 @@
     {
       "type": 1,
       "content": {
-        "json": "# Vows & Vedas — Whole-Site Analytics\n---\nEnd-to-end visitor intelligence across the entire site: traffic, top pages, acquisition, the full lead funnel, CTA channel performance, enquiries, chatbot engagement, tools, and client errors.\n\nAll tiles read `customEvents` emitted to Application Insights via `/api/track`. Events: `PageView`, `CtaClick`, `ChatbotOpened`, `ChatbotFirstMessage`, `ContactFormStarted`, `EnquirySubmitted`, `HashtagGenerated`, `ClientError`. A shared `sessionId` / `userId` ties the funnel together.\n\n> Set the time range below, then scroll each section. Companion workbook `vows-vedas-analytics.workbook` drills into enquiries alone."
+        "json": "# Vows & Vedas — Whole-Site Analytics\n---\nEnd-to-end visitor intelligence across the entire site: traffic, top pages, acquisition, the full lead funnel, CTA channel performance, enquiries, chatbot engagement, and client errors.\n\nAll tiles read `customEvents` emitted to Application Insights via `/api/track`. Events: `PageView`, `CtaClick`, `ChatbotOpened`, `ChatbotFirstMessage`, `ContactFormStarted`, `EnquirySubmitted`, `ClientError`. A shared `sessionId` / `userId` ties the funnel together.\n\n> Set the time range below, then scroll each section. Companion workbook `vows-vedas-analytics.workbook` drills into enquiries alone."
       },
       "name": "header-text"
     },
@@ -423,24 +423,6 @@
         "gridSettings": { "formatters": [ { "columnMatch": "Mentions", "formatter": 4, "formatOptions": { "palette": "purple" } } ] }
       },
       "name": "chat-cities"
-    },
-
-    { "type": 1, "content": { "json": "## H · Tools\nHashtag generator usage." }, "name": "section-tools" },
-    {
-      "type": 3,
-      "content": {
-        "version": "KqlItem/1.0",
-        "query": "customEvents | where name == 'HashtagGenerated' | where timestamp {TimeRange} | summarize Generations = count(), Sessions = dcount(tostring(customDimensions.sessionId)) by ['Vibe'] = tostring(customDimensions.vibe) | order by Generations desc",
-        "size": 3,
-        "title": "Hashtag Generations by Vibe",
-        "timeContext": { "durationMs": 0 },
-        "timeContextFromParameter": "TimeRange",
-        "queryType": 0,
-        "resourceType": "microsoft.insights/components",
-        "visualization": "barchart",
-        "chartSettings": { "xAxis": "Vibe", "yAxis": ["Generations"] }
-      },
-      "name": "hashtag-vibe"
     },
 
     { "type": 1, "content": { "json": "## I · Timing\nWhen visitors are active (UTC)." }, "name": "section-timing" },
