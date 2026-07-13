@@ -39,16 +39,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // ── Targets: the single source of truth for "what good looks like" ────────────
-// SEED values — calibrate against the first few real snapshots, then commit the
-// tuned numbers here. A stage is only a "leak" when its rate is below target.
-// These mirror the funnel the workbook charts (Session -> /contact -> Form
-// started -> Enquiry). Wedding enquiries are low-frequency / high-value, so the
-// session_to_lead floor is deliberately low.
+// Calibrated 2026-07-13 against the real 30d funnel (observed: session->contact
+// 0.14, contact->form 0.18, form->enquiry 0.45, session->lead 0.011); set as
+// modest stretch goals just above observed. A stage is only a "leak" when its
+// rate is below target. These mirror the funnel the workbook charts (Session ->
+// /contact -> Form started -> Enquiry). Wedding enquiries are low-frequency /
+// high-value, so the session_to_lead floor is deliberately low. Recalibrate as
+// volume grows.
 const TARGETS = {
-  session_to_contact: 0.12, // sessions that reach the /contact page
-  contact_to_form: 0.5, //     /contact viewers who start the form (first field focus)
-  form_to_enquiry: 0.35, //    form-starters who submit — the standing abandonment leak
-  session_to_lead: 0.02, //    overall session -> enquiry (lead) rate
+  session_to_contact: 0.15, // sessions that reach /contact (obs ~0.14)
+  contact_to_form: 0.25, //    /contact viewers who start the form (obs ~0.18, weakest stage)
+  form_to_enquiry: 0.55, //    form-starters who submit (obs ~0.45)
+  session_to_lead: 0.015, //   overall session -> enquiry (lead) rate (obs ~0.011)
 };
 
 // Stage definitions: [label, numerator_key, denominator_key, target_key].
@@ -118,7 +120,7 @@ customEvents
 // execFile directly, so we go through `cmd /c az`. The KQL is passed via an
 // @file reference (a global az convention) so the query — which contains pipes
 // and quotes — never touches a shell command line on any platform.
-function runAz(app, resourceGroup, kql) {
+function runAz(app, resourceGroup, kql, windowDays) {
   const dir = mkdtempSync(join(tmpdir(), "ai-snap-"));
   const qfile = join(dir, "query.kql");
   writeFileSync(qfile, kql, "utf8");
@@ -127,6 +129,11 @@ function runAz(app, resourceGroup, kql) {
     "--app", app,
     "--resource-group", resourceGroup,
     "--analytics-query", "@" + qfile,
+    // The in-query `ago(2*windowDays)` filter governs the range, but az defaults
+    // its API timespan to the last ~1h when neither --offset nor --timespan is
+    // given — which silently clips the query to the last hour and returns
+    // near-zero. Pin the CLI window to the query's full outer range.
+    "--offset", `${windowDays * 2}d`,
     "-o", "json",
   ];
   const isWin = process.platform === "win32";
@@ -300,7 +307,7 @@ function main() {
     if (args.fromFile) {
       row = rowFromAzResult(JSON.parse(readFileSync(args.fromFile, "utf8")));
     } else {
-      row = rowFromAzResult(runAz(args.app, args.resourceGroup, kql));
+      row = rowFromAzResult(runAz(args.app, args.resourceGroup, kql, args.window));
     }
   } catch (e) {
     const msg = e && e.stderr ? String(e.stderr) : e && e.message ? e.message : String(e);
