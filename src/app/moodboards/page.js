@@ -329,9 +329,19 @@ export default function MoodBoardsPage() {
   const [copied, setCopied] = useState(false);
   const [sessionUser, setSessionUser] = useState(undefined);
   const [savedImgs, setSavedImgs] = useState(new Set());
+  const [signInNotice, setSignInNotice] = useState("");
   const gridRef = useRef(null);
   const overlayRef = useRef(null);
   const panelRef = useRef(null);
+  const noticeTimerRef = useRef(null);
+
+  // Warn guests that saving requires an account, then open the sign-in dropdown
+  const promptSignIn = () => {
+    setSignInNotice("Please sign in to save moodboards — it only takes your email.");
+    window.dispatchEvent(new CustomEvent("openProfileDropdown"));
+    clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => setSignInNotice(""), 4000);
+  };
 
   // Load session + persisted saves on mount
   useEffect(() => {
@@ -348,12 +358,13 @@ export default function MoodBoardsPage() {
         }
       })
       .catch(() => setSessionUser(null));
+    return () => clearTimeout(noticeTimerRef.current);
   }, []);
 
   const toggleImgSave = async (e, img, board) => {
     e.stopPropagation();
     if (!sessionUser) {
-      window.dispatchEvent(new CustomEvent("openProfileDropdown"));
+      promptSignIn();
       return;
     }
     const isSaved = savedImgs.has(img);
@@ -376,6 +387,41 @@ export default function MoodBoardsPage() {
       setSavedImgs(prev => {
         const next = new Set(prev);
         if (isSaved) next.add(img); else next.delete(img);
+        return next;
+      });
+    }
+  };
+
+  // Whole-board saves share the savedImgs set under a "board:"-prefixed id,
+  // so they can never collide with individual image paths.
+  const boardIdeaId = (board) => `board:${board.id}`;
+
+  const toggleBoardSave = async (board) => {
+    if (!sessionUser) {
+      promptSignIn();
+      return;
+    }
+    const id = boardIdeaId(board);
+    const isSaved = savedImgs.has(id);
+    setSavedImgs(prev => {
+      const next = new Set(prev);
+      if (isSaved) next.delete(id); else next.add(id);
+      return next;
+    });
+    try {
+      if (isSaved) {
+        await fetch(`/api/user/saved-ideas?ideaId=${encodeURIComponent(id)}`, { method: "DELETE" });
+      } else {
+        await fetch("/api/user/saved-ideas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ideaId: id, ideaTitle: board.name, ideaTag: board.category, ideaImg: board.images[0] }),
+        });
+      }
+    } catch {
+      setSavedImgs(prev => {
+        const next = new Set(prev);
+        if (isSaved) next.add(id); else next.delete(id);
         return next;
       });
     }
@@ -511,13 +557,37 @@ export default function MoodBoardsPage() {
 
   return (
     <div className="bg-[#FDFAF5] min-h-screen">
-      
+
+      {/* SIGN-IN WARNING TOAST (above the lightbox overlay) */}
+      {signInNotice && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[10001] flex items-center gap-2.5 bg-[#1A1408] text-white rounded-full pl-4 pr-5 py-3 shadow-2xl">
+          <span className="text-[#C9A234] text-[15px] leading-none">♡</span>
+          <p className="font-body text-[12px] tracking-wide whitespace-nowrap">{signInNotice}</p>
+        </div>
+      )}
+
       {/* HERO SECTION */}
       <header className="pt-20 pb-12 px-6 text-center">
         <p className="font-body text-[#E87B3A] text-[11px] uppercase tracking-[0.4em] mb-3">Explore & Inspire</p>
         <h1 className="font-heading text-[#1A1408] text-5xl md:text-[56px] leading-tight mb-3">Wedding Mood Boards</h1>
         <p className="font-body text-[#9A8F7E] text-[15px] max-w-[600px] mx-auto mb-6">Eight curated aesthetics to spark your imagination.</p>
         <div className="w-12 h-[1px] bg-[#C9A234] mx-auto"></div>
+
+        {/* Signed-out notice — saving requires an account */}
+        {sessionUser === null && (
+          <div className="mt-8 mx-auto max-w-[560px] flex items-center justify-center gap-3 border border-[#C9A234]/40 bg-[#C9A234]/5 rounded-full px-6 py-3">
+            <span className="text-[#C9A234] text-[15px] leading-none">♡</span>
+            <p className="font-body text-[#1A1408] text-[12px] tracking-wide">
+              Sign in to save moodboards and images to your collection.
+            </p>
+            <button
+              onClick={promptSignIn}
+              className="font-body text-[11px] uppercase tracking-[0.2em] text-white bg-[#C9A234] hover:bg-[#A8892F] px-4 py-1.5 rounded-full transition-colors shrink-0"
+            >
+              Sign In
+            </button>
+          </div>
+        )}
       </header>
 
       {/* MASONRY GRID */}
@@ -596,9 +666,28 @@ export default function MoodBoardsPage() {
                 >
                   Talk To A Planner
                 </Link>
-                <button className="w-full border border-[#C9A234] text-[#C9A234] flex items-center justify-center h-[48px] rounded-[6px] text-[11px] uppercase tracking-[0.3em] font-body hover:bg-[#C9A234]/5 transition-colors">
-                  Save This Board
+                <button
+                  onClick={() => toggleBoardSave(selectedBoard)}
+                  className={`w-full border border-[#C9A234] flex items-center justify-center gap-2 h-[48px] rounded-[6px] text-[11px] uppercase tracking-[0.3em] font-body transition-colors
+                    ${savedImgs.has(boardIdeaId(selectedBoard))
+                      ? "bg-[#C9A234] text-white hover:bg-[#A8892F]"
+                      : "text-[#C9A234] hover:bg-[#C9A234]/5"
+                    }`}
+                >
+                  {savedImgs.has(boardIdeaId(selectedBoard)) ? "♥ Board Saved" : "Save This Board"}
                 </button>
+                {sessionUser === null && (
+                  <p className="font-body text-[#9A8F7E] text-[11px] text-center leading-relaxed">
+                    You&apos;ll need to{" "}
+                    <button
+                      onClick={promptSignIn}
+                      className="text-[#C9A234] underline underline-offset-2 hover:text-[#A8892F]"
+                    >
+                      sign in
+                    </button>{" "}
+                    to save this board or individual images.
+                  </p>
+                )}
               </div>
             </div>
 
