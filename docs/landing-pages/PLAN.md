@@ -46,13 +46,15 @@ know about each other. On top of that:
 | Build errors | Broken landing code never reaches production | Work on branches; `npm run build` locally; the Azure Static Web Apps PR preview must build before merge. Even a broken merge only fails the deploy — the live site keeps running the previous version. |
 | Enquiry API | Landing pages call it, never modify it | Same contract as the contact page. Worst case the form errors; the website is untouched. |
 
-The **only shared edit**, made once: the global chrome components
-(`Navigation`, `Footer`, `Chatbot`, `LoadingScreen`, `HashtagGeneratorPopup`)
-each got a one-line guard — `if (pathname?.startsWith("/lp")) return null;` —
-so landing pages render without menu/login/chatbot/loader/site-footer. The
-guard only activates on `/lp` paths and is never touched again for future
-variants. (Chatbot is hidden because its quick-action rail links to
-`/contact`, which would leak visitors off the landing page.)
+The **only shared edits**, made once: the client chrome components
+(`Navigation`, `Chatbot`, `LoadingScreen`, `HashtagGeneratorPopup`) each got
+a one-line guard — `if (pathname?.startsWith("/lp")) return null;` — and
+`Footer` (a Server Component, kept that way for zero added client JS) is
+wrapped in the tiny `HideOnLp` client gate inside `layout.js`. So landing
+pages render without menu/login/chatbot/loader/site-footer, and the guards
+only activate on `/lp` paths — never touched again for future variants.
+(Chatbot is hidden because its quick-action rail links to `/contact`, which
+would leak visitors off the landing page.)
 
 ## 4. File structure
 

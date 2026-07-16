@@ -1,11 +1,6 @@
-"use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 export default function Footer() {
-  const pathname = usePathname();
-  // Landing pages (/lp/*) render their own minimal footer
-  if (pathname?.startsWith("/lp")) return null;
   return (
     <footer className="bg-ink text-surface/60 py-16 px-4 sm:px-8 lg:px-12">
       <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">

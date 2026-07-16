@@ -2,6 +2,7 @@ import "./globals.css";
 import Script from "next/script";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import HideOnLp from "@/components/HideOnLp";
 import SmoothScroll from "@/components/SmoothScroll";
 import CustomCursor from "@/components/CustomCursor";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -46,7 +47,11 @@ export default function RootLayout({ children }) {
         <SmoothScroll>
           <Navigation />
           <main>{children}</main>
-          <Footer />
+          {/* Gated client-side so Footer itself stays a Server Component;
+              landing pages (/lp/*) render their own minimal footer */}
+          <HideOnLp>
+            <Footer />
+          </HideOnLp>
         </SmoothScroll>
       </body>
     </html>

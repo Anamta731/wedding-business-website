@@ -230,10 +230,7 @@ export default function EnquiryForm({ heading, subheading }) {
         </form>
 
         <p className="text-center text-[10px] sm:text-[10.5px] text-muted font-light mt-2.5 sm:mt-3">
-          Our planners reply within 24 hours ·{" "}
-          <a href="/privacy" className="underline underline-offset-2 decoration-ink/20 hover:decoration-gold">
-            Your details stay private
-          </a>
+          Our planners reply within 24 hours · Your details stay private
         </p>
 
         <p className="text-center text-[10px] sm:text-[11px] text-muted font-light mt-1.5 sm:mt-2">

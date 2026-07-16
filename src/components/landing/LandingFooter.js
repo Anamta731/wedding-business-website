@@ -21,7 +21,6 @@ export default function LandingFooter() {
           <a href={`mailto:${EMAIL}`} className="hover:text-gold transition-colors">Email</a>
           <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">Instagram</a>
           <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">Facebook</a>
-          <a href="/privacy" className="hover:text-gold transition-colors">Privacy</a>
         </div>
         <p className="text-[10px] tracking-widest">© {new Date().getFullYear()} Vows &amp; Vedas. All rights reserved.</p>
       </div>
