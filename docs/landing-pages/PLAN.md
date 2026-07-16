@@ -60,7 +60,7 @@ variants. (Chatbot is hidden because its quick-action rail links to
 src/app/lp/
 ├── error.js                      # runtime safety net for all landing routes
 ├── README.md                     # handover instructions (see §9)
-└── royal-heritage/               # ← one folder per variant
+└── destination-weddings/         # ← one folder per variant
     ├── page.js                   # ~30 lines: stacks sections, exports metadata (+ noindex)
     └── content.js                # ALL editable content: images, headlines, services,
                                   # destinations, testimonials, CTA labels
@@ -112,7 +112,7 @@ On success → redirect to `/thank-you`.
 
 ## 7. Build order
 
-1. **Skeleton** — route folder + bare page; verify at `localhost:3000/lp/royal-heritage`
+1. **Skeleton** — route folder + bare page; verify at `localhost:3000/lp/destination-weddings`
 2. **Chrome guards** — one-line `/lp` guards in Navigation, Chatbot, LoadingScreen, HashtagGeneratorPopup; add `src/app/lp/error.js`
 3. **Content + hero** — define `content.js` shape; build `HeroSlider` (Framer Motion crossfade + swipe; Next `<Image>` with `sizes` for phone-sized downloads)
 4. **Sections** — header, services, destinations, testimonials, footer; mobile-first at 375px
