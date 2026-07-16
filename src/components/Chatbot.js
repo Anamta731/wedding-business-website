@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { trackClient, getSessionId } from "@/lib/clientTelemetry";
 
 // Render inline markdown: **bold** → gold semibold span
@@ -99,6 +100,7 @@ const INITIAL_MESSAGE = {
 };
 
 export default function Chatbot() {
+  const pathname = usePathname();
   const [open, setOpen]               = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [messages, setMessages]       = useState([INITIAL_MESSAGE]);
@@ -406,6 +408,11 @@ export default function Chatbot() {
 
   const showHandoffCta = accIntent.stage === "handoff" ||
     (accIntent.intent_level === "high" && messages.length > 6);
+
+  // Landing pages (/lp/*) run without the chatbot + quick-action rail: they
+  // have their own CTAs, and the rail's Enquiry link would navigate visitors
+  // off the landing page.
+  if (pathname?.startsWith("/lp")) return null;
 
   return (
     <>

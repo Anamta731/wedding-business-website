@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function LoadingScreen() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -10,6 +12,9 @@ export default function LoadingScreen() {
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Ad visitors on landing pages (/lp/*) shouldn't wait behind the intro screen
+  if (pathname?.startsWith("/lp")) return null;
 
   if (!visible) return null;
 
