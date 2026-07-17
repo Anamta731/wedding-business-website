@@ -169,7 +169,7 @@ export default function LandingContactPage({ backHref }) {
       <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen pt-16 sm:pt-[72px]">
         {/* ── FORM SIDE ─────────────────────────────────────────────── */}
         <div
-          className="relative px-6 pt-10 pb-16 sm:px-8 md:px-14 lg:px-20 md:py-20 flex flex-col justify-center"
+          className="relative px-6 pt-6 pb-10 sm:px-8 md:px-14 lg:px-20 md:py-10 flex flex-col justify-center"
           style={{
             background:
               "radial-gradient(ellipse 60% 40% at 0% 0%, rgba(201,162,52,0.07) 0%, transparent 70%), radial-gradient(ellipse 50% 30% at 100% 100%, rgba(201,162,52,0.04) 0%, transparent 70%), #FDFAF5",
@@ -178,17 +178,15 @@ export default function LandingContactPage({ backHref }) {
         >
           <CornerFrame size={40} inset={14} opacity={0.4} className="hidden md:block" />
           <div className="max-w-[640px] w-full mx-auto">
-            <Flourish className="mb-5 w-[240px]" />
-
-            <p className="lp-eyebrow text-[10px] tracking-[0.42em] md:tracking-[0.5em] uppercase mb-4 font-medium">
+            <p className="lp-eyebrow text-[10px] tracking-[0.42em] md:tracking-[0.5em] uppercase mb-2 font-medium">
               Let&rsquo;s Begin
             </p>
 
-            <h1 className="lp-title font-heading text-ink text-[36px] sm:text-[42px] md:text-[50px] font-light leading-[1.08] mb-8">
-              Tell Us About<br />Your <em className="italic">Dream Day</em>
+            <h1 className="lp-title font-heading text-ink text-[25px] sm:text-[32px] md:text-[36px] lg:text-[40px] font-light leading-[1.1] mb-3 whitespace-nowrap">
+              Tell Us About Your <em className="italic">Dream Day</em>
             </h1>
 
-            <Flourish className="mb-9 w-[240px] rotate-180" />
+            <Flourish className="mb-6 w-[200px]" />
 
             <form onSubmit={handleSubmit} onFocusCapture={handleFormStart}>
               {/* Honeypot — invisible to humans; bots fill it and get flagged */}
@@ -201,13 +199,13 @@ export default function LandingContactPage({ backHref }) {
               </div>
 
               {/* ── Identity ── */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="lpc-group">
                   <label className="lpc-label" htmlFor="lpc-name">Full Name</label>
                   <input type="text" className="lpc-input" id="lpc-name" name="name" autoComplete="name" required />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-x-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8">
                   <div className="lpc-group">
                     <label className="lpc-label" htmlFor="lpc-email">Email Address</label>
                     <input type="email" className="lpc-input" id="lpc-email" name="email" autoComplete="email" required />
@@ -243,8 +241,8 @@ export default function LandingContactPage({ backHref }) {
 
               <hr className="lpc-sep" />
 
-              {/* ── Wedding details ── */}
-              <div className="space-y-6">
+              {/* ── Wedding details — side by side on desktop ── */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8">
                 <div className="lpc-group">
                   <label className="lpc-label" htmlFor="lpc-destination">
                     Destination in Mind <span className="lpc-optional">(Optional)</span>
@@ -284,7 +282,7 @@ export default function LandingContactPage({ backHref }) {
               </div>
 
               {/* Consent */}
-              <label className="flex items-start gap-2.5 mt-7 cursor-pointer">
+              <label className="flex items-start gap-2.5 mt-4 cursor-pointer">
                 <input type="checkbox" name="consent" required className="mt-[2px] w-3.5 h-3.5 shrink-0 accent-[#C9A234] cursor-pointer" />
                 <span className="text-[11px] text-muted font-light leading-snug">
                   I agree to Vows &amp; Vedas using these details to contact me about my enquiry.
@@ -292,7 +290,7 @@ export default function LandingContactPage({ backHref }) {
               </label>
 
               {/* Submit */}
-              <div className="mt-8">
+              <div className="mt-5">
                 <button
                   type="submit"
                   disabled={status === "loading"}
@@ -319,8 +317,8 @@ export default function LandingContactPage({ backHref }) {
             </form>
 
             {/* Alternative contact */}
-            <div className="mt-10 pt-8 border-t border-ink/10">
-              <p className="text-[9px] tracking-[0.28em] uppercase text-ink/40 font-medium mb-4">Or reach us directly</p>
+            <div className="mt-6 pt-5 border-t border-ink/10">
+              <p className="text-[9px] tracking-[0.28em] uppercase text-ink/40 font-medium mb-3">Or reach us directly</p>
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <a
                   href={WHATSAPP_URL}
@@ -427,7 +425,7 @@ export default function LandingContactPage({ backHref }) {
         }
         .lpc-input {
           width: 100%;
-          min-height: 46px;
+          min-height: 40px;
           border: 0;
           border-bottom: 1.5px solid rgba(26, 20, 8, 0.22);
           background: transparent;
@@ -435,7 +433,7 @@ export default function LandingContactPage({ backHref }) {
           font-family: var(--font-body);
           font-size: 16px;
           line-height: 1.5;
-          padding: 16px 0 12px;
+          padding: 8px 0 7px;
           transition: border-color 0.25s, box-shadow 0.25s;
           outline: none;
           border-radius: 0;
@@ -445,7 +443,7 @@ export default function LandingContactPage({ backHref }) {
           box-shadow: 0 2px 0 0 #c9a234;
         }
         .lpc-textarea {
-          min-height: 110px;
+          min-height: 68px;
           resize: vertical;
         }
         .lpc-input:-webkit-autofill,
@@ -459,7 +457,7 @@ export default function LandingContactPage({ backHref }) {
         .lpc-sep {
           border: none;
           border-top: 1px solid rgba(26, 20, 8, 0.07);
-          margin: 34px 0 34px 16px;
+          margin: 18px 0 18px 16px;
         }
         .lpc-phone-field {
           display: flex;
@@ -477,7 +475,7 @@ export default function LandingContactPage({ backHref }) {
           border: none;
           border-right: 1px solid rgba(26, 20, 8, 0.12);
           min-width: 96px;
-          padding: 8px 28px 12px 0;
+          padding: 6px 28px 7px 0;
           font-family: var(--font-body);
           font-size: 13px;
           color: #1a1408;
@@ -498,7 +496,7 @@ export default function LandingContactPage({ backHref }) {
           color: #1a1408;
           font-family: var(--font-body);
           font-size: 16px;
-          padding: 8px 0 12px 12px;
+          padding: 6px 0 7px 12px;
           outline: none;
         }
         .lpc-phone-input::placeholder {

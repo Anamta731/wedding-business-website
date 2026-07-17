@@ -15,14 +15,6 @@ export default function LandingTestimonials({ eyebrow, title, titleAccent, featu
 
   return (
     <section className="bg-ink py-10 md:py-14 px-5 sm:px-8 relative overflow-hidden">
-      {/* Oversized quote mark filling the upper ink band */}
-      <span
-        aria-hidden="true"
-        className="absolute -top-10 left-1/2 -translate-x-1/2 font-heading italic text-gold/[0.14] text-[260px] md:text-[380px] leading-none select-none pointer-events-none"
-      >
-        &ldquo;
-      </span>
-
       <div className="max-w-[1000px] mx-auto relative">
         <SectionHeading eyebrow={eyebrow} title={title} titleAccent={titleAccent} dark />
 

@@ -20,11 +20,13 @@ export const content = {
     subtitle:
       "Palace courtyards, ocean-edge mandaps, Himalayan lawns — scouted, designed and orchestrated end to end, so you only have to be present.",
     placesLine: "Udaipur · Goa · Jaipur · Kerala · Jaisalmer · The Himalayas",
+    // focal = where the faces are ("x% y%") so phones crop around them;
+    // focalDesktop for the wide crop. Tune per photo if you swap images.
     slides: [
-      { image: "/assets/photos/couple shots/0G4A5379.jpg", alt: "Couple at their destination wedding celebration" },
-      { image: "/assets/photos/couple shots/TSR53178.jpg", alt: "Wedding couple portrait" },
-      { image: "/assets/photos/couple shots/TSR53127.jpg", alt: "Couple during their wedding ceremony" },
-      { image: "/assets/photos/couple shots/TSR53067.jpg", alt: "Newlyweds at their destination wedding" },
+      { image: "/assets/photos/couple shots/0G4A5379.jpg", alt: "Couple at their destination wedding celebration", focal: "30% 38%", focalDesktop: "50% 35%" },
+      { image: "/assets/photos/couple shots/TSR53178.jpg", alt: "Wedding couple portrait", focal: "50% 42%", focalDesktop: "50% 45%" },
+      { image: "/assets/photos/couple shots/TSR53127.jpg", alt: "Couple during their wedding ceremony", focal: "50% 40%", focalDesktop: "50% 40%" },
+      { image: "/assets/photos/couple shots/TSR53067.jpg", alt: "Newlyweds at their destination wedding", focal: "42% 28%", focalDesktop: "50% 35%" },
     ],
   },
 

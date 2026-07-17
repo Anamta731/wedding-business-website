@@ -31,8 +31,10 @@ export default function LandingHero({ eyebrow, title, titleAccent, subtitle, pla
     // p-0 required: the main site's global stylesheet gives every bare
     // <section> default padding — landing sections must declare their own
     <section className="relative overflow-hidden bg-ink p-0">
-      {/* ── Slider backdrop ── */}
-      <div className="absolute inset-0">
+      {/* ── Slider backdrop — on phones a shorter top band (so faces stay
+           clear of the text stack), fading into ink below; full-bleed on
+           desktop ── */}
+      <div className="absolute inset-x-0 top-0 h-[52svh] md:h-auto md:inset-0 overflow-hidden">
         <AnimatePresence>
           <motion.div
             key={index}
@@ -47,19 +49,25 @@ export default function LandingHero({ eyebrow, title, titleAccent, subtitle, pla
               initial={{ scale: reduceMotion ? 1 : 1.08 }}
               animate={{ scale: 1 }}
               transition={{ duration: SLIDE_MS / 1000 + 1.5, ease: "linear" }}
+              style={{
+                "--focal-m": slides[index].focal || "center",
+                "--focal-d": slides[index].focalDesktop || "center",
+              }}
             >
               <Image
                 src={slides[index].image}
                 alt={slides[index].alt}
                 fill
                 priority={index === 0}
-                className="object-cover"
+                className="object-cover [object-position:var(--focal-m)] md:[object-position:var(--focal-d)]"
               />
             </motion.div>
           </motion.div>
         </AnimatePresence>
-        {/* Ink veil for legibility */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(26,20,8,0.4)_0%,rgba(26,20,8,0.2)_45%,rgba(26,20,8,0.55)_78%,rgba(26,20,8,0.78)_100%)]" />
+        {/* Ink veil for legibility — lighter up top on phones so faces read */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(26,20,8,0.35)_0%,rgba(26,20,8,0.12)_40%,rgba(26,20,8,0.45)_75%,rgba(26,20,8,0.7)_100%)] md:bg-[linear-gradient(to_bottom,rgba(26,20,8,0.4)_0%,rgba(26,20,8,0.2)_45%,rgba(26,20,8,0.55)_78%,rgba(26,20,8,0.78)_100%)]" />
+        {/* Phone: dissolve the image band into the ink below it */}
+        <div className="absolute inset-x-0 bottom-0 h-[38%] md:hidden bg-[linear-gradient(to_bottom,transparent_0%,#1A1408_92%)]" />
         <div className="absolute inset-0 hidden lg:block bg-[linear-gradient(to_right,rgba(26,20,8,0.5)_0%,transparent_55%)]" />
       </div>
 
@@ -76,7 +84,7 @@ export default function LandingHero({ eyebrow, title, titleAccent, subtitle, pla
       {/* ── Content ── */}
       <div className="relative max-w-[1240px] mx-auto px-5 sm:px-8 pt-24 pb-8 lg:pt-0 lg:pb-0 lg:min-h-[92vh] lg:grid lg:grid-cols-[1fr_380px] lg:items-center lg:gap-16">
         {/* Headline block */}
-        <div className="min-h-[40svh] flex flex-col justify-end lg:min-h-0 lg:justify-center pb-6 lg:pb-0 pointer-events-none lg:pointer-events-auto">
+        <div className="min-h-[46svh] flex flex-col justify-end lg:min-h-0 lg:justify-center pb-6 lg:pb-0 pointer-events-none lg:pointer-events-auto">
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
