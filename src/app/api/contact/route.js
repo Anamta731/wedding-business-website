@@ -317,6 +317,8 @@ export async function POST(req) {
         weddingDate: weddingDate ?? "",
         message: message ?? "",
         submittedAt: new Date().toISOString(),
+        // Phase 0: link enquiry ↔ chatbot conversation (camelCase sessionId, D-030).
+        sessionId: sessionId || chatbotContext?.session_id || null,
       });
     }).catch((err) => console.error("Enquiry DB save error:", err));
 

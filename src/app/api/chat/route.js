@@ -14,6 +14,9 @@ import { matchStaticFaq } from "@/lib/staticFaqs";
 import { extractIntent }  from "@/lib/intentExtraction";
 import { retrieveContext } from "@/lib/retrieval";
 import { getSuggestions }  from "@/lib/suggestions";
+import { getSession }      from "@/lib/session";
+import { getConversationsContainer } from "@/lib/cosmos";
+import { buildConversationDoc } from "@/lib/conversation.mjs";
 
 const _credential = new DefaultAzureCredential();
 
@@ -380,6 +383,7 @@ export async function POST(request) {
     accumulated_intent   = {},
     lead_captured        = false,
     used_chips           = [],
+    session_id           = null,
   } = body;
 
   if (!query?.trim()) {
@@ -398,6 +402,39 @@ export async function POST(request) {
     });
   }
 
+  // Phase 0 persistence context. userId read here (request-scoped cookie; local JWT verify, no
+  // network → no meaningful latency). All persistence is fire-and-forget AFTER the response closes.
+  const userId = await getSession().then((s) => s?.sub ?? null).catch(() => null);
+
+  /**
+   * Persist one completed turn to `conversations` (fire-and-forget, best-effort).
+   * TODO(B1-DPDP): transcripts contain PII — privacy-policy update is a prod deploy blocker (EDGE-CASES B1).
+   * Never throws: persistence must be INVISIBLE to the chatbot user.
+   */
+  async function persistTurn(assistantText, intentObj) {
+    if (!session_id) return; // nothing to key a session doc on
+    try {
+      const container = getConversationsContainer();
+      let existing = null;
+      try {
+        ({ resource: existing } = await container.item(session_id, session_id).read());
+      } catch (e) {
+        if (e.code !== 404) throw e; // 404 = first turn; anything else is a real error
+      }
+      const doc = buildConversationDoc(existing, {
+        sessionId: session_id,
+        userId,
+        userText: query,
+        assistantText: assistantText || "",
+        intent: intentObj,
+        nowIso: new Date().toISOString(),
+      });
+      await container.items.upsert(doc);
+    } catch (err) {
+      console.error("[chat/persist] non-fatal:", err?.message || err);
+    }
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
       const enc = new TextEncoder();
@@ -412,6 +449,7 @@ export async function POST(request) {
           const suggestions = getSuggestions(query, used_chips, accumulated_intent);
           push(sseDone(suggestions));
           controller.close();
+          await persistTurn(staticAnswer, accumulated_intent); // static-FAQ bypass — no new intent computed
           return;
         }
 
@@ -504,6 +542,7 @@ export async function POST(request) {
           ));
           push(sseDone(getSuggestions(query, used_chips, intent)));
           controller.close();
+          await persistTurn(fullReply, intent); // generation error — persist partial reply if any
           return;
         }
 
@@ -524,12 +563,14 @@ export async function POST(request) {
           : getSuggestions(query, used_chips, intent);
         push(sseDone(suggestions));
         controller.close();
+        await persistTurn(fullReply.replace(/\[CHIPS:[^\]]*\]/, "").trim(), intent); // normal completion
 
       } catch (err) {
         console.error("[chat/route] error:", err);
         push(sseError("Something went wrong. Please try again or tap 'SPEAK TO A PLANNER' below to reach us directly."));
         push(sseDone());
         controller.close();
+        await persistTurn("", accumulated_intent); // hard error — persist at least the user's message
       }
     },
   });

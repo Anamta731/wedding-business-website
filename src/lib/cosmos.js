@@ -26,3 +26,10 @@ export function getSavedIdeasContainer() {
 export function getEnquiriesContainer() {
   return getDb().container("enquiries");
 }
+
+// Phase 0: chatbot conversation persistence. Container "conversations", pk /sessionId
+// (camelCase doc shape — MUST match the copilot's reader, DECISIONS D-003/D-030).
+// Created by scripts/init-conversations.mjs; runtime never creates it.
+export function getConversationsContainer() {
+  return getDb().container("conversations");
+}

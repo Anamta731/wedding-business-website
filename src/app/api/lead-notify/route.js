@@ -1,7 +1,21 @@
 import { EmailClient } from "@azure/communication-email";
 import { DefaultAzureCredential } from "@azure/identity";
+import { getConversationsContainer } from "@/lib/cosmos";
 
 const _credential = new DefaultAzureCredential();
+
+// Phase 0: stamp leadFired on the conversation doc (fire-and-forget, best-effort, never throws).
+async function markConversationLeadFired(sessionId) {
+  if (!sessionId || sessionId === "unknown") return;
+  try {
+    await getConversationsContainer().item(sessionId, sessionId).patch([
+      { op: "set", path: "/leadFired", value: true },
+      { op: "set", path: "/lastMessageAt", value: new Date().toISOString() },
+    ]);
+  } catch (e) {
+    if (e.code !== 404) console.error("[lead-notify/conversation] non-fatal:", e?.message || e);
+  }
+}
 let _emailClient = null;
 function getEmailClient() {
   if (!_emailClient) {
@@ -177,6 +191,9 @@ export async function POST(req) {
 
     const poller = await client.beginSend(emailMessage);
     await poller.pollUntilDone();
+
+    // Link the conversation to the fired lead (best-effort; not user-visible).
+    await markConversationLeadFired(session_id);
 
     return Response.json({ success: true });
   } catch (err) {
