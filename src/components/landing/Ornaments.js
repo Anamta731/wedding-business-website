@@ -2,6 +2,137 @@
 // site's gold dividers and corner brackets, redrawn here so the kit stays
 // self-contained. Sized via className (w-* h-auto) so each use can scale.
 
+// "Sindoor" — deep bridal red, used ONLY as a detail colour inside the gold
+// line-work (blossom petals, lotus tips). Never large fills.
+export const SINDOOR = "#96222D";
+const SINDOOR_ON_INK = "#C96A72"; // rose tint so red details read on dark bg
+
+// Small four-petal blossom with a gold heart — replaces plain diamonds.
+export function Blossom({ className = "", size = 9, color = SINDOOR }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" className={`shrink-0 ${className}`} aria-hidden="true">
+      <circle cx="5" cy="2.1" r="1.8" fill={color} opacity="0.92" />
+      <circle cx="7.9" cy="5" r="1.8" fill={color} opacity="0.92" />
+      <circle cx="5" cy="7.9" r="1.8" fill={color} opacity="0.92" />
+      <circle cx="2.1" cy="5" r="1.8" fill={color} opacity="0.92" />
+      <circle cx="5" cy="5" r="1.4" fill="#C9A234" />
+    </svg>
+  );
+}
+
+// Standalone lotus — the heading flourish's centre motif on its own, with
+// ivory-filled petals so it stays crisp over photography. Used as the
+// enquiry card's crest (where the wax seal used to sit).
+export function Lotus({ className = "" }) {
+  return (
+    <svg
+      viewBox="0 0 44 26"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`h-auto ${className}`}
+      style={{ color: "#C9A234" }}
+      aria-hidden="true"
+    >
+      {/* outer sweeps */}
+      <path d="M22 21 Q 8 20.5 3 15" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <path d="M22 21 Q 36 20.5 41 15" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      {/* inner petals */}
+      <path d="M22 21 Q 13 17 11 9 Q 18.5 12 22 21 Z" stroke="currentColor" strokeWidth="1.4" fill="#FDFAF5" strokeLinejoin="round" />
+      <path d="M22 21 Q 31 17 33 9 Q 25.5 12 22 21 Z" stroke="currentColor" strokeWidth="1.4" fill="#FDFAF5" strokeLinejoin="round" />
+      {/* centre petal */}
+      <path d="M22 3 Q 25.8 12 22 21 Q 18.2 12 22 3 Z" stroke="currentColor" strokeWidth="1.5" fill="#FDFAF5" strokeLinejoin="round" />
+      {/* sindoor tips */}
+      <circle cx="22" cy="2.6" r="1.6" fill={SINDOOR} />
+      <circle cx="10.7" cy="8.4" r="1.3" fill={SINDOOR} />
+      <circle cx="33.3" cy="8.4" r="1.3" fill={SINDOOR} />
+    </svg>
+  );
+}
+
+// Lotus flourish — the swirl divider's floral sibling: hairlines flowing
+// into a line-drawn lotus with sindoor petal tips.
+export function LotusFlourish({ className = "", dark = false }) {
+  const tip = dark ? SINDOOR_ON_INK : SINDOOR;
+  return (
+    <svg
+      viewBox="0 0 150 26"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`h-auto ${className}`}
+      style={{ color: "#C9A234" }}
+      aria-hidden="true"
+    >
+      <path d="M0 19 L44 19" stroke="currentColor" strokeWidth="1" opacity="0.75" />
+      <path d="M106 19 L150 19" stroke="currentColor" strokeWidth="1" opacity="0.75" />
+      <circle cx="47.5" cy="19" r="1.8" fill="currentColor" />
+      <circle cx="102.5" cy="19" r="1.8" fill="currentColor" />
+      {/* centre petal */}
+      <path d="M75 4 Q 78.5 12 75 21 Q 71.5 12 75 4 Z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+      {/* inner petals */}
+      <path d="M75 21 Q 66.5 17 64.5 9.5 Q 71.5 12.5 75 21 Z" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round" />
+      <path d="M75 21 Q 83.5 17 85.5 9.5 Q 78.5 12.5 75 21 Z" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinejoin="round" />
+      {/* outer sweeps */}
+      <path d="M75 21 Q 61 20.5 56 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      <path d="M75 21 Q 89 20.5 94 15" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      {/* sindoor tips */}
+      <circle cx="75" cy="3.6" r="1.5" fill={tip} />
+      <circle cx="64.2" cy="9" r="1.2" fill={tip} />
+      <circle cx="85.8" cy="9" r="1.2" fill={tip} />
+    </svg>
+  );
+}
+
+// Marigold toran — the garland strung over wedding entrances: drooping
+// strings with hanging marigolds and leaf pairs. The hero's signature.
+export function Toran({ className = "" }) {
+  const UNIT = 120;
+  const COUNT = 12;
+  return (
+    <div className={`w-full overflow-hidden pointer-events-none ${className}`} aria-hidden="true">
+      <svg
+        viewBox={`0 0 ${UNIT * COUNT} 46`}
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-auto w-full min-w-[760px]"
+        style={{ color: "#C9A234" }}
+        preserveAspectRatio="xMidYMin meet"
+      >
+        {Array.from({ length: COUNT }).map((_, i) => {
+          const x = i * UNIT;
+          const mx = x + UNIT / 2;
+          return (
+            <g key={i}>
+              {/* drooping string */}
+              <path d={`M${x} 7 Q ${mx} 28 ${x + UNIT} 7`} stroke="currentColor" strokeWidth="1.5" opacity="0.85" fill="none" />
+              {/* blossom at the string joint */}
+              <circle cx={x} cy="6.5" r="2.6" fill="currentColor" opacity="0.9" />
+              <circle cx={x} cy="6.5" r="1.1" fill={SINDOOR} />
+              {/* hanging strand + leaf pair + marigold */}
+              <path d={`M${mx} 17.5 L${mx} 29`} stroke="currentColor" strokeWidth="1.2" opacity="0.85" />
+              <path d={`M${mx} 24 L${mx - 5} 28 M${mx} 24 L${mx + 5} 28`} stroke="currentColor" strokeWidth="1.1" opacity="0.7" />
+              <circle cx={mx} cy="34.5" r="4.6" fill="currentColor" opacity="0.95" />
+              <circle cx={mx} cy="34.5" r="2" fill={SINDOOR} />
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// Petal ring — turns the RSVP monogram disc into a flower seal.
+export function SealPetals({ className = "" }) {
+  return (
+    <svg viewBox="0 0 76 76" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
+      {Array.from({ length: 8 }).map((_, k) => (
+        <g key={k} transform={`rotate(${k * 45} 38 38)`}>
+          <ellipse cx="38" cy="9.5" rx="5.5" ry="9" fill="#FDFAF5" stroke="#C9A234" strokeWidth="1.2" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 // Centered swirl divider with diamond eye — sits inside existing margins.
 export function Flourish({ className = "", dark = false }) {
   const eye = dark ? "#1A1408" : "#FDFAF5";
@@ -56,8 +187,12 @@ export function SectionDivider({ dark = false, className = "" }) {
         />
         <circle cx="5" cy="26" r="2.5" fill="currentColor" />
         <circle cx="295" cy="26" r="2.5" fill="currentColor" />
-        <circle cx="150" cy="10" r="4" fill="currentColor" />
-        <circle cx="150" cy="10" r="1.8" fill={eye} />
+        {/* blossom floating above the wave's centre */}
+        <circle cx="150" cy="6.2" r="2.1" fill={dark ? SINDOOR_ON_INK : SINDOOR} opacity="0.92" />
+        <circle cx="153.6" cy="9.8" r="2.1" fill={dark ? SINDOOR_ON_INK : SINDOOR} opacity="0.92" />
+        <circle cx="150" cy="13.4" r="2.1" fill={dark ? SINDOOR_ON_INK : SINDOOR} opacity="0.92" />
+        <circle cx="146.4" cy="9.8" r="2.1" fill={dark ? SINDOOR_ON_INK : SINDOOR} opacity="0.92" />
+        <circle cx="150" cy="9.8" r="1.7" fill="currentColor" />
       </svg>
       <div className="flex-grow h-px bg-current opacity-40" />
     </div>
@@ -83,7 +218,8 @@ export function MiniFlourish({ className = "" }) {
         fill="none"
       />
       <circle cx="2" cy="7" r="1.6" fill="currentColor" />
-      <circle cx="42" cy="4" r="1.6" fill="currentColor" />
+      {/* vine ends in a sindoor bud */}
+      <circle cx="42" cy="4" r="1.9" fill={SINDOOR} opacity="0.95" />
     </svg>
   );
 }

@@ -3,6 +3,7 @@
 // defined in globals.css — same brand, no page-style coupling.
 
 export const WHATSAPP_URL = "https://wa.me/919654277656";
+export const PHONE_URL = "tel:+919654277656";
 export const EMAIL = "info@vowsandvedas.com";
 export const INSTAGRAM_URL = "https://www.instagram.com/vowsandvedas/";
 export const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61590644336785";

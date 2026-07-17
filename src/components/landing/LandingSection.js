@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Flourish, Diamond } from "./Ornaments";
+import { LotusFlourish, Blossom } from "./Ornaments";
 
 // Shared section shell: eyebrow + display heading, gentle fade-up on entry.
 // The flourish lives inside the margin the heading already had — no extra space.
@@ -18,9 +18,9 @@ export function SectionHeading({ eyebrow, title, titleAccent, dark = false, flou
     >
       <p className="flex items-center justify-center gap-3 text-[10px] md:text-[11px] tracking-[0.42em] uppercase text-gold font-semibold mb-4">
         <span className={`hidden sm:block w-14 md:w-24 h-px ${hairline}`} aria-hidden="true" />
-        <Diamond />
+        <Blossom />
         <span>{eyebrow}</span>
-        <Diamond />
+        <Blossom />
         <span className={`hidden sm:block w-14 md:w-24 h-px ${hairline}`} aria-hidden="true" />
       </p>
       <h2
@@ -30,7 +30,7 @@ export function SectionHeading({ eyebrow, title, titleAccent, dark = false, flou
       >
         {title} <em className="italic text-gold">{titleAccent}</em>
       </h2>
-      {flourish && <Flourish className="mx-auto mt-4 w-[170px] md:w-[220px]" dark={dark} />}
+      {flourish && <LotusFlourish className="mx-auto mt-4 w-[170px] md:w-[220px]" dark={dark} />}
     </motion.div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { trackClient } from "@/lib/clientTelemetry";
 import { Reveal } from "./LandingSection";
-import { CornerFrame, Diamond, SectionDivider } from "./Ornaments";
+import { Blossom, CornerFrame, SectionDivider } from "./Ornaments";
 import { scrollToEnquire, WHATSAPP_URL, FINAL_CTA_ID } from "./theme";
 
 export default function LandingFinalCta({ eyebrow, title, titleAccent, subtitle, button }) {
@@ -37,9 +37,9 @@ export default function LandingFinalCta({ eyebrow, title, titleAccent, subtitle,
           <CornerFrame size={34} inset={14} opacity={0.65} className="md:hidden" />
           <CornerFrame size={48} inset={18} opacity={0.65} className="hidden md:block" />
           <p className="flex items-center justify-center gap-3 text-[10px] tracking-[0.42em] uppercase text-gold font-semibold mb-4">
-            <Diamond />
+            <Blossom />
             <span>{eyebrow}</span>
-            <Diamond />
+            <Blossom />
           </p>
           <h2 className="font-heading text-ink font-light text-[34px] sm:text-[44px] md:text-[52px] leading-[1.1] mb-4">
             {title} <em className="italic text-gold">{titleAccent}</em>

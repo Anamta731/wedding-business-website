@@ -8,6 +8,7 @@ import LandingGallery from "@/components/landing/LandingGallery";
 import LandingFinalCta from "@/components/landing/LandingFinalCta";
 import LandingFooter from "@/components/landing/LandingFooter";
 import StickyCtaBar from "@/components/landing/StickyCtaBar";
+import FloatingCtaRail from "@/components/landing/FloatingCtaRail";
 import { content } from "./content";
 
 export const metadata = {
@@ -21,7 +22,7 @@ export const metadata = {
 export default function DestinationWeddingsLanding() {
   return (
     <div className="bg-bg">
-      <LandingHeader />
+      <LandingHeader enquireHref="/lp/destination-weddings/enquire" />
 
       <LandingHero {...content.hero}>
         <EnquiryForm {...content.enquiry} />
@@ -35,6 +36,7 @@ export default function DestinationWeddingsLanding() {
 
       <LandingFooter />
       <StickyCtaBar />
+      <FloatingCtaRail enquireHref="/lp/destination-weddings/enquire" />
     </div>
   );
 }

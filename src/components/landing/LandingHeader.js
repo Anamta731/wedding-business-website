@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { trackClient } from "@/lib/clientTelemetry";
 import { scrollToEnquire } from "./theme";
 
 // Slim landing header: logo + one action. No menu, no login — a landing
-// visitor has exactly one thing to do.
-export default function LandingHeader() {
+// visitor has exactly one thing to do. Pass enquireHref to navigate to the
+// full enquiry page; without it the button scrolls to the on-page card.
+export default function LandingHeader({ enquireHref }) {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -18,6 +21,11 @@ export default function LandingHeader() {
   }, []);
 
   const handleEnquire = () => {
+    if (enquireHref) {
+      trackClient("CtaClick", { channel: "enquire_page", location: "lp_header" });
+      router.push(enquireHref);
+      return;
+    }
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_header" });
     scrollToEnquire();
   };

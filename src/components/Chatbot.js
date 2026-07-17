@@ -409,10 +409,11 @@ export default function Chatbot() {
   const showHandoffCta = accIntent.stage === "handoff" ||
     (accIntent.intent_level === "high" && messages.length > 6);
 
-  // Landing pages (/lp/*) run without the chatbot + quick-action rail: they
-  // have their own CTAs, and the rail's Enquiry link would navigate visitors
-  // off the landing page.
-  if (pathname?.startsWith("/lp")) return null;
+  // Landing pages (/lp/*): the chat concierge renders, but the quick-action
+  // rail stays off (its Enquiry link would navigate visitors off the landing
+  // page, and the landing bottom bar already covers call/WhatsApp). The
+  // launcher lifts above the landing page's bottom action bar on phones.
+  const isLp = pathname?.startsWith("/lp") ?? false;
 
   return (
     <>
@@ -425,7 +426,7 @@ export default function Chatbot() {
       )}
 
       {/* ── Right sidebar: Call / Email / WhatsApp ─────────────────── */}
-      <div className={`fixed right-0 top-1/2 -translate-y-1/2 z-[2001] ${open ? "hidden sm:block" : ""}`}>
+      <div className={`fixed right-0 top-1/2 -translate-y-1/2 z-[2001] ${isLp ? "hidden" : ""} ${open ? "hidden sm:block" : ""}`}>
         {sidebarOpen ? (
           <div className="bg-[#1A1408] border border-[#C9A234]/25 border-r-0 rounded-l-2xl flex flex-col items-center shadow-[-8px_0_40px_rgba(0,0,0,0.45)]">
 
@@ -504,7 +505,7 @@ export default function Chatbot() {
       </div>
 
       {/* ── Bottom-right: Chat panel + toggle ──────────────────────── */}
-      <div className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-[2000] flex flex-col gap-3 items-end pointer-events-none">
+      <div className={`fixed ${isLp ? "bottom-[104px] md:bottom-8" : "bottom-6 sm:bottom-8"} right-4 sm:right-8 z-[2000] flex flex-col gap-3 items-end pointer-events-none`}>
 
         {/* Chat panel */}
         <div

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { trackClient, getSessionId, getUserId } from "@/lib/clientTelemetry";
-import { CornerFrame } from "./Ornaments";
+import { CornerFrame, Lotus } from "./Ornaments";
 import { WHATSAPP_URL, ENQUIRE_ID } from "./theme";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -79,14 +79,18 @@ export default function EnquiryForm({ heading, subheading }) {
     setStatus("loading");
     setError(false);
     const form = e.target;
+    // Single name field → split for the API's first/last contract
+    const nameParts = form.name.value.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "—";
     try {
       const recaptchaToken = await getRecaptchaToken();
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: form.fname.value,
-          lastName: form.lname.value,
+          firstName,
+          lastName,
           email: form.email.value,
           phone: phoneNumber ? `${dialCode} ${phoneNumber}` : "",
           destination: form.destination.value,
@@ -115,21 +119,17 @@ export default function EnquiryForm({ heading, subheading }) {
 
   return (
     <div id={ENQUIRE_ID} className="rsvp-card relative scroll-mt-24">
-      {/* Monogram seal — wax-seal disc with inner hairline ring */}
-      <div className="absolute z-10 left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-gold flex items-center justify-center shadow-[0_5px_24px_rgba(201,162,52,0.55)]">
-        <span aria-hidden="true" className="absolute inset-[3px] rounded-full border border-bg/60" />
-        <span className="font-heading italic text-bg text-[17px] leading-none pt-0.5">V&amp;V</span>
+      {/* Lotus crest — straddles the card's top border, zero footprint */}
+      <div className="absolute z-10 left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+        <Lotus className="w-[56px] drop-shadow-[0_2px_8px_rgba(26,20,8,0.25)]" />
       </div>
 
-      <div className="rsvp-inner relative px-5 pt-9 pb-5 sm:px-7 sm:pt-9 sm:pb-6">
+      <div className="rsvp-inner relative px-5 pt-6 pb-5 sm:px-7 sm:pt-7 sm:pb-6">
         <CornerFrame size={28} inset={8} opacity={0.7} />
-        <p className="text-center text-[9px] tracking-[0.5em] uppercase text-gold font-semibold mb-1.5 sm:mb-2">
-          RSVP
-        </p>
         <h2 className="font-heading text-ink text-[24px] sm:text-[26px] font-light leading-[1.12] text-center mb-1 sm:mb-1.5">
           {heading}
         </h2>
-        <p className="text-center text-[12px] sm:text-[12.5px] text-muted font-light leading-relaxed mb-4 sm:mb-5 max-w-[300px] mx-auto">
+        <p className="text-center text-[12px] sm:text-[12.5px] text-muted font-light leading-relaxed mb-3.5 sm:mb-4 max-w-[300px] mx-auto">
           {subheading}
         </p>
 
@@ -143,20 +143,9 @@ export default function EnquiryForm({ heading, subheading }) {
             <input type="text" id="lp_company_website" name="company_website" tabIndex={-1} autoComplete="off" defaultValue="" />
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4">
-            <div className="rsvp-field">
-              <label className="rsvp-label" htmlFor="lp-fname">First name</label>
-              <input className="rsvp-input" type="text" id="lp-fname" name="fname" autoComplete="given-name" required />
-            </div>
-            <div className="rsvp-field">
-              <label className="rsvp-label" htmlFor="lp-lname">Last name</label>
-              <input className="rsvp-input" type="text" id="lp-lname" name="lname" autoComplete="family-name" required />
-            </div>
-          </div>
-
           <div className="rsvp-field">
-            <label className="rsvp-label" htmlFor="lp-email">Email</label>
-            <input className="rsvp-input" type="email" id="lp-email" name="email" autoComplete="email" required />
+            <label className="rsvp-label" htmlFor="lp-name">Full name</label>
+            <input className="rsvp-input" type="text" id="lp-name" name="name" autoComplete="name" required />
           </div>
 
           <div className="rsvp-field">
@@ -187,6 +176,11 @@ export default function EnquiryForm({ heading, subheading }) {
           </div>
 
           <div className="rsvp-field">
+            <label className="rsvp-label" htmlFor="lp-email">Email</label>
+            <input className="rsvp-input" type="email" id="lp-email" name="email" autoComplete="email" required />
+          </div>
+
+          <div className="rsvp-field">
             <label className="rsvp-label" htmlFor="lp-destination">
               Destination in mind <span className="rsvp-optional">(optional)</span>
             </label>
@@ -203,7 +197,7 @@ export default function EnquiryForm({ heading, subheading }) {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="relative w-full mt-4 sm:mt-5 py-3.5 sm:py-4 bg-gold text-ink text-[11px] tracking-[0.3em] uppercase font-semibold border border-gold rounded-[2px] transition-all duration-300 hover:bg-ink hover:text-gold disabled:opacity-80 shadow-[0_8px_24px_rgba(201,162,52,0.28)] hover:shadow-[0_10px_30px_rgba(26,20,8,0.2)]"
+            className="relative block mx-auto mt-4 sm:mt-5 px-10 py-3 bg-gold text-ink text-[10.5px] tracking-[0.28em] uppercase font-semibold border border-gold rounded-full transition-all duration-300 hover:bg-ink hover:text-gold hover:scale-[1.04] disabled:opacity-80 shadow-[0_0_22px_rgba(201,162,52,0.55),0_6px_20px_rgba(201,162,52,0.3)] hover:shadow-[0_0_30px_rgba(201,162,52,0.7),0_8px_26px_rgba(201,162,52,0.35)]"
           >
             <span className={status === "loading" ? "opacity-0" : "opacity-100"}>Send my enquiry</span>
             {status === "loading" && (
@@ -212,6 +206,19 @@ export default function EnquiryForm({ heading, subheading }) {
               </span>
             )}
           </button>
+
+          {/* Consent — required before sending */}
+          <label className="flex items-start gap-2.5 mt-4 cursor-pointer max-w-[320px] mx-auto">
+            <input
+              type="checkbox"
+              name="consent"
+              required
+              className="mt-[2px] w-3.5 h-3.5 shrink-0 accent-[#C9A234] cursor-pointer"
+            />
+            <span className="text-[10.5px] text-muted font-light leading-snug text-left">
+              I agree to Vows &amp; Vedas using these details to contact me about my enquiry.
+            </span>
+          </label>
 
           {error && (
             <p role="alert" className="text-center text-[11.5px] text-[#9B3324] font-light mt-3">
@@ -231,19 +238,6 @@ export default function EnquiryForm({ heading, subheading }) {
 
         <p className="text-center text-[10px] sm:text-[10.5px] text-muted font-light mt-2.5 sm:mt-3">
           Our planners reply within 24 hours · Your details stay private
-        </p>
-
-        <p className="text-center text-[10px] sm:text-[11px] text-muted font-light mt-1.5 sm:mt-2">
-          Prefer to chat?{" "}
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackClient("CtaClick", { channel: "whatsapp", location: "lp_enquiry_card" })}
-            className="text-gold underline underline-offset-4 decoration-gold/40 hover:decoration-gold"
-          >
-            Message us on WhatsApp
-          </a>
         </p>
       </div>
 

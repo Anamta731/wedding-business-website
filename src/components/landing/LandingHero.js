@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Diamond } from "./Ornaments";
+import { Blossom } from "./Ornaments";
 
 const SLIDE_MS = 6000;
 
@@ -120,9 +120,9 @@ export default function LandingHero({ eyebrow, title, titleAccent, subtitle, pla
             transition={{ duration: 1, delay: 1.7 }}
             className="flex items-center gap-3 text-[10px] tracking-[0.34em] uppercase text-bg/75 font-medium [text-shadow:0_1px_14px_rgba(26,20,8,0.55)]"
           >
-            <Diamond className="!bg-gold/70" />
+            <Blossom color="#C9A234" size={8} />
             <span>{placesLine}</span>
-            <Diamond className="hidden sm:inline-block !bg-gold/70" />
+            <Blossom color="#C9A234" size={8} className="hidden sm:block" />
           </motion.p>
 
           {/* Slide progress ornaments — hit area padded to 44px without moving layout */}
@@ -149,7 +149,7 @@ export default function LandingHero({ eyebrow, title, titleAccent, subtitle, pla
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.9, ease: "easeOut" }}
-          className="relative z-10 max-w-[420px] mx-auto w-full lg:mx-0 lg:max-w-none lg:pt-32 lg:pb-12"
+          className="relative z-10 max-w-[420px] mx-auto w-full lg:mx-0 lg:max-w-none lg:pt-32 lg:pb-12 lg:translate-x-[clamp(16px,calc((100vw-1240px)/2),56px)]"
         >
           {children}
         </motion.div>
