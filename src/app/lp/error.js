@@ -1,5 +1,7 @@
 "use client";
 
+import { WHATSAPP_URL } from "@/components/landing/theme";
+
 // Safety net for all landing pages: if a landing route crashes at runtime,
 // only this fallback renders — the rest of the site is untouched.
 export default function LandingError({ error, reset }) {
@@ -24,7 +26,7 @@ export default function LandingError({ error, reset }) {
             Reload page
           </button>
           <a
-            href="https://wa.me/919654277656"
+            href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="px-10 py-4 text-ink/70 text-[11px] tracking-[0.3em] uppercase font-semibold border border-ink/20 rounded-[2px] transition-colors duration-300 hover:border-gold hover:text-gold"

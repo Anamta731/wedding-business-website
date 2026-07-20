@@ -14,16 +14,36 @@ import { scrollToEnquire, WHATSAPP_URL } from "./theme";
 export default function LandingDestinations({ eyebrow, title, titleAccent, items, midCta }) {
   const railRef = useRef(null);
   const [selected, setSelected] = useState(null);
+  // Re-measure trigger: the rail is md:hidden, so if the page first renders at a
+  // desktop width its geometry reads 0 and the effects below bail. Bumping this
+  // on resize/rotation re-runs them, so the loop + drift still activate if the
+  // viewport later crosses below the md breakpoint in the same session.
+  const [measureTick, setMeasureTick] = useState(0);
+
+  useEffect(() => {
+    let t;
+    const bump = () => {
+      clearTimeout(t);
+      t = setTimeout(() => setMeasureTick((n) => n + 1), 200); // debounce drag-resize
+    };
+    window.addEventListener("resize", bump);
+    window.addEventListener("orientationchange", bump);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", bump);
+      window.removeEventListener("orientationchange", bump);
+    };
+  }, []);
 
   // Start the rail in the middle of the three identical copies so the loop has
-  // room to wrap either way. Runs once — the position is kept when the overlay
-  // opens and closes.
+  // room to wrap either way. Re-runs on resize (measureTick) so it re-centers if
+  // the viewport crosses into mobile; position is kept when the overlay toggles.
   useEffect(() => {
     const rail = railRef.current;
     if (!rail || rail.children.length < items.length * 2) return;
     const setWidth = rail.children[items.length].offsetLeft - rail.children[0].offsetLeft;
     if (setWidth > 0) rail.scrollLeft = setWidth;
-  }, [items.length]);
+  }, [items.length, measureTick]);
 
   // A single rAF controller drives the mobile rail — one owner of scrollLeft, so
   // nothing fights it. It drifts forward at a slow constant speed off a
@@ -91,7 +111,7 @@ export default function LandingDestinations({ eyebrow, title, titleAccent, items
       rail.removeEventListener("pointerup", resumeSoon);
       rail.removeEventListener("touchend", resumeSoon);
     };
-  }, [items.length, selected]);
+  }, [items.length, selected, measureTick]);
 
   const handleMidCta = () => {
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_destinations" });
