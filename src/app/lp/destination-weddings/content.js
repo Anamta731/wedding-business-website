@@ -8,9 +8,9 @@
 export const content = {
   // Browser tab + ad-platform preview
   meta: {
-    title: "Luxury Destination Weddings in India — Vows & Vedas",
+    title: "Luxury Destination Wedding Planner in India | Vows & Vedas",
     description:
-      "Palaces, beaches, hills and havelis — planned end to end by India's premier luxury destination wedding studio. Tell us about your day.",
+      "Plan your dream destination wedding with Vows & Vedas. Expert planners for palace, beach, hill, and luxury weddings across India's top destinations. Get a free consultation.",
   },
 
   hero: {
