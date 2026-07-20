@@ -20,11 +20,11 @@ export const content = {
     subtitle:
       "Plan your dream wedding in Udaipur, Goa, Jaipur, Kerala & more with India's trusted luxury wedding planners.",
     // Checkmark trust cues shown under the headline
-    trustBadges: ["25+ Wedding Destinations", "End-to-End Planning", "Free Venue Consultation"],
+    trustBadges: ["25+ Wedding Destinations", "End-to-End Planning", "Free Venue Consultation", "Luxury Wedding Experts"],
     // Headline numbers — big and confident, never congested
     stats: [
       { value: "15+", label: "Years Experience" },
-      { value: "1000+", label: "Happy Families" },
+      { value: "100+", label: "Venue Partners" },
       { value: "500+", label: "Weddings Planned" },
     ],
     // focal = where the faces are ("x% y%") so phones crop around them;
