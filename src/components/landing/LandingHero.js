@@ -128,7 +128,7 @@ export default function LandingHero({ eyebrow, title, titleAccent, subtitle, tru
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.25 }}
-              className="flex flex-wrap gap-x-5 gap-y-2 mb-7 max-w-[480px]"
+              className="grid grid-cols-2 gap-x-5 gap-y-2.5 mb-7 max-w-[480px]"
             >
               {trustBadges.map((badge) => (
                 <li

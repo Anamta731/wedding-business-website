@@ -11,7 +11,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Minimal ink footer: identity, contact, stay-connected signup, legal.
 // No site navigation — the landing page keeps its focus to the very end.
 // Unlike the main footer's decorative field, this signup actually delivers
-// the email to the team via the existing lead-notify pipeline.
+// the email to the team via the dedicated /api/newsletter-notify endpoint.
 export default function LandingFooter() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | done | error
@@ -25,11 +25,10 @@ export default function LandingFooter() {
     }
     setStatus("loading");
     try {
-      const res = await fetch("/api/lead-notify", {
+      const res = await fetch("/api/newsletter-notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: "Newsletter signup",
           contact: value,
           source: "Landing page footer — stay connected",
           session_id: getSessionId(),

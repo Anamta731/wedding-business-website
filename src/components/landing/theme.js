@@ -11,7 +11,6 @@ export const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61590644336
 // Every CTA on a landing page scrolls to this element (the enquiry card)
 export const ENQUIRE_ID = "enquire";
 
-// The closing CTA card — the sticky mobile bar hides while this is on screen
 export const FINAL_CTA_ID = "lp-final-cta";
 
 // The landing footer — the sticky CTAs stay visible once it's reached, so the
