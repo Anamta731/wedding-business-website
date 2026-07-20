@@ -318,7 +318,7 @@ export default function ContactPage() {
                 type="submit"
               >
                 <span className={`submit-text transition-opacity duration-300 ${status !== "idle" ? "opacity-0" : "opacity-100"}`}>
-                  Send My Enquiry
+                  Share My Vision
                 </span>
                 {status === "loading" && (
                   <div className="absolute inset-0 flex items-center justify-center">
