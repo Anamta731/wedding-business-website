@@ -3,11 +3,16 @@
 import { trackClient } from "@/lib/clientTelemetry";
 import { Reveal } from "./LandingSection";
 import { Blossom, CornerFrame, SectionDivider } from "./Ornaments";
-import { scrollToEnquire, WHATSAPP_URL, FINAL_CTA_ID } from "./theme";
+import { scrollToEnquire, FINAL_CTA_ID } from "./theme";
 
-export default function LandingFinalCta({ eyebrow, title, titleAccent, subtitle, button }) {
+export default function LandingFinalCta({ eyebrow, title, titleAccent, subtitle, button, secondary }) {
   const handleCta = () => {
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_final_cta" });
+    scrollToEnquire();
+  };
+
+  const handleSecondary = () => {
+    trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_final_cta_quote" });
     scrollToEnquire();
   };
 
@@ -49,22 +54,21 @@ export default function LandingFinalCta({ eyebrow, title, titleAccent, subtitle,
           </p>
           <button
             onClick={handleCta}
-            className="px-12 py-4 bg-gold text-ink text-[11px] tracking-[0.3em] uppercase font-semibold border border-gold rounded-[2px] transition-all duration-300 hover:bg-ink hover:text-gold shadow-[0_8px_24px_rgba(201,162,52,0.28)] hover:shadow-[0_10px_30px_rgba(26,20,8,0.2)]"
+            className="px-12 py-4 bg-gold text-ink text-[11px] tracking-[0.3em] uppercase font-semibold border border-gold rounded-full transition-all duration-300 hover:bg-ink hover:text-gold shadow-[0_8px_24px_rgba(201,162,52,0.28)] hover:shadow-[0_10px_30px_rgba(26,20,8,0.2)]"
           >
             {button}
           </button>
-          <p className="text-[11px] text-muted font-light mt-6">
-            or{" "}
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackClient("CtaClick", { channel: "whatsapp", location: "lp_final_cta" })}
-              className="text-gold underline underline-offset-4 decoration-gold/40 hover:decoration-gold"
-            >
-              message us on WhatsApp
-            </a>
-          </p>
+          {secondary && (
+            <p className="text-[11px] text-muted font-light mt-6">
+              or{" "}
+              <button
+                onClick={handleSecondary}
+                className="text-gold underline underline-offset-4 decoration-gold/40 hover:decoration-gold transition-colors"
+              >
+                {secondary}
+              </button>
+            </p>
+          )}
         </div>
       </Reveal>
     </section>

@@ -414,6 +414,9 @@ export default function Chatbot() {
   // page, and the landing bottom bar already covers call/WhatsApp). The
   // launcher lifts above the landing page's bottom action bar on phones.
   const isLp = pathname?.startsWith("/lp") ?? false;
+  // The landing enquiry page (/lp/*/enquire) is a focused, single-task form —
+  // the concierge is hidden entirely there so nothing competes with the form.
+  const isLpEnquire = isLp && (pathname?.endsWith("/enquire") ?? false);
 
   return (
     <>
@@ -505,7 +508,7 @@ export default function Chatbot() {
       </div>
 
       {/* ── Bottom-right: Chat panel + toggle ──────────────────────── */}
-      <div className={`fixed ${isLp ? "bottom-[104px] md:bottom-8" : "bottom-6 sm:bottom-8"} right-4 sm:right-8 z-[2000] flex flex-col gap-3 items-end pointer-events-none`}>
+      <div className={`fixed ${isLpEnquire ? "hidden" : ""} ${isLp ? "bottom-[104px] md:bottom-8" : "bottom-6 sm:bottom-8"} right-4 sm:right-8 z-[2000] flex flex-col gap-3 items-end pointer-events-none`}>
 
         {/* Chat panel */}
         <div

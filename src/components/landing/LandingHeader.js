@@ -56,13 +56,13 @@ export default function LandingHeader({ enquireHref }) {
 
       <button
         onClick={handleEnquire}
-        className={`shrink-0 whitespace-nowrap px-4 py-2.5 sm:px-7 sm:py-3 text-[10px] sm:text-[11px] tracking-[0.2em] sm:tracking-[0.26em] uppercase font-semibold rounded-[2px] border transition-colors duration-300 ${
+        className={`shrink-0 whitespace-nowrap px-4 py-2.5 sm:px-7 sm:py-3 text-[10px] sm:text-[11px] tracking-[0.2em] sm:tracking-[0.26em] uppercase font-semibold rounded-full border transition-colors duration-300 ${
           scrolled
             ? "bg-gold text-ink border-gold hover:bg-ink hover:text-gold"
             : "bg-transparent text-bg border-bg/50 hover:bg-gold hover:text-ink hover:border-gold"
         }`}
       >
-        Enquire now
+        Get Free Consultation
       </button>
     </header>
   );

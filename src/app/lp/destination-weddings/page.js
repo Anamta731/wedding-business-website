@@ -5,6 +5,7 @@ import LandingServices from "@/components/landing/LandingServices";
 import LandingDestinations from "@/components/landing/LandingDestinations";
 import LandingTestimonials from "@/components/landing/LandingTestimonials";
 import LandingGallery from "@/components/landing/LandingGallery";
+import LandingFaq from "@/components/landing/LandingFaq";
 import LandingFinalCta from "@/components/landing/LandingFinalCta";
 import LandingFooter from "@/components/landing/LandingFooter";
 import StickyCtaBar from "@/components/landing/StickyCtaBar";
@@ -32,10 +33,11 @@ export default function DestinationWeddingsLanding() {
       <LandingDestinations {...content.destinations} />
       <LandingTestimonials {...content.testimonials} />
       <LandingGallery {...content.gallery} />
+      <LandingFaq {...content.faq} enquireHref="/lp/destination-weddings/enquire" />
       <LandingFinalCta {...content.finalCta} />
 
       <LandingFooter />
-      <StickyCtaBar />
+      <StickyCtaBar enquireHref="/lp/destination-weddings/enquire" />
       <FloatingCtaRail enquireHref="/lp/destination-weddings/enquire" />
     </div>
   );

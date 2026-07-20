@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { trackClient } from "@/lib/clientTelemetry";
-import { scrollToEnquire, WHATSAPP_URL, PHONE_URL, ENQUIRE_ID, FINAL_CTA_ID } from "./theme";
+import { scrollToEnquire, WHATSAPP_URL, PHONE_URL, ENQUIRE_ID } from "./theme";
 
 // Desktop-only floating CTA rail on the right edge — same ink-and-gold rail
 // as the main site. Pass enquireHref to send Enquiry to the full enquiry
 // page; without it, it scrolls to the landing form. Mirrors the mobile
-// bottom bar's behaviour: slides in after the hero (whose form is already
-// on screen) and slides away while the enquiry card or final CTA is visible.
+// bottom bar's behaviour: slides in after the hero and hides only while the
+// hero enquiry card is on screen, staying visible through the rest of the page.
 export default function FloatingCtaRail({ enquireHref }) {
   const [open, setOpen] = useState(true);
   const [pastHero, setPastHero] = useState(false);
@@ -22,10 +22,8 @@ export default function FloatingCtaRail({ enquireHref }) {
   }, []);
 
   useEffect(() => {
-    const targets = [ENQUIRE_ID, FINAL_CTA_ID]
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
-    if (!targets.length) return;
+    const target = document.getElementById(ENQUIRE_ID);
+    if (!target) return;
     const observer = new IntersectionObserver(
       (entries) => {
         setCtaInView((prev) => {
@@ -36,11 +34,13 @@ export default function FloatingCtaRail({ enquireHref }) {
       },
       { threshold: 0.15 }
     );
-    targets.forEach((t) => observer.observe(t));
+    observer.observe(target);
     return () => observer.disconnect();
   }, []);
 
-  const visible = pastHero && !Object.values(ctaInView).some(Boolean);
+  // Hide only while the hero enquiry card is on screen; visible everywhere else
+  // after the hero, including the final CTA section and footer.
+  const visible = pastHero && !ctaInView[ENQUIRE_ID];
 
   const handleEnquire = () => {
     if (enquireHref) {

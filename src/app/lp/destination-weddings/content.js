@@ -15,11 +15,18 @@ export const content = {
 
   hero: {
     eyebrow: "Luxury Destination Weddings · India",
-    title: "Marry somewhere",
-    titleAccent: "extraordinary.",
+    title: "Where Every Vow",
+    titleAccent: "Becomes a Story",
     subtitle:
-      "Palace courtyards, ocean-edge mandaps, Himalayan lawns — scouted, designed and orchestrated end to end, so you only have to be present.",
-    placesLine: "Udaipur · Goa · Jaipur · Kerala · Jaisalmer · The Himalayas",
+      "Plan your dream wedding in Udaipur, Goa, Jaipur, Kerala & more with India's trusted luxury wedding planners.",
+    // Checkmark trust cues shown under the headline
+    trustBadges: ["25+ Wedding Destinations", "End-to-End Planning", "Free Venue Consultation"],
+    // Headline numbers — big and confident, never congested
+    stats: [
+      { value: "15+", label: "Years Experience" },
+      { value: "1000+", label: "Happy Families" },
+      { value: "500+", label: "Weddings Planned" },
+    ],
     // focal = where the faces are ("x% y%") so phones crop around them;
     // focalDesktop for the wide crop. Tune per photo if you swap images.
     slides: [
@@ -95,7 +102,7 @@ export const content = {
     eyebrow: "Where couples say yes",
     title: "Extraordinary",
     titleAccent: "locations",
-    midCta: "Tell us your dream destination",
+    midCta: "Check Available Venues",
     items: [
       {
         name: "Royal & Heritage",
@@ -147,6 +154,19 @@ export const content = {
           { name: "The Taj Mahal Palace", location: "Mumbai", image: "/assets/photos/citiy luxe/taj-mumbai.jpg" },
           { name: "ITC Grand Bharat", location: "Delhi NCR", image: "/assets/photos/citiy luxe/ITC-grand-bharat-delhi.jpg" },
           { name: "Taj West End", location: "Bangalore", image: "/assets/photos/citiy luxe/taj-westend-banglore.jpg" },
+        ],
+      },
+      {
+        name: "International",
+        places: "Thailand · Bali · Italy · UAE · Turkey",
+        image: "/assets/photos/destination/pool_venue.jpg",
+        description:
+          "Say your vows beyond India's borders — Tuscan villas and Lake Como shores, Thai beach resorts, Balinese clifftop pavilions and Emirati palaces. We handle visas and local licences, on-ground vendor sourcing and multi-country guest travel end to end, so a wedding abroad feels every bit as effortless as one at home.",
+        venues: [
+          { name: "Anantara", location: "Koh Samui, Thailand", image: "/assets/photos/beach-wedding/grand-hyatt-goa.jpg" },
+          { name: "AYANA Resort", location: "Bali, Indonesia", image: "/assets/photos/beach-wedding/caravela-beachresort.jpg" },
+          { name: "Belmond Villa", location: "Lake Como, Italy", image: "/assets/photos/beach-wedding/taj-cidade-goa.jpg" },
+          { name: "Emirates Palace", location: "Abu Dhabi, UAE", image: "/assets/photos/citiy luxe/ITC-grand-bharat-delhi.jpg" },
         ],
       },
     ],
@@ -217,12 +237,52 @@ export const content = {
     ],
   },
 
+  faq: {
+    eyebrow: "Good to know",
+    title: "Frequently asked",
+    titleAccent: "questions",
+    items: [
+      {
+        q: "What makes Vows & Vedas different from other wedding planners?",
+        a: "We combine deep cultural knowledge with an international design sensibility — and we treat each wedding as a one-of-a-kind story. Every detail is intentional, every vendor is trusted, and every couple feels genuinely cared for from the first call to the final farewell.",
+      },
+      {
+        q: "How early should we book?",
+        a: "For destination weddings, we recommend booking 12–18 months in advance to secure your ideal venue and dates. For local weddings, 6–12 months is usually sufficient. That said, we occasionally accommodate shorter timelines — reach out and we'll see what's possible.",
+      },
+      {
+        q: "Do you plan international weddings?",
+        a: "Yes, we do. Alongside our destinations across India, we plan and orchestrate weddings around the world — European palaces, Middle Eastern resorts, island ceremonies and beyond. We handle cross-border logistics, local vendor sourcing and guest coordination end to end, so distance never gets in the way of the celebration.",
+      },
+      {
+        q: "What's included in your planning packages?",
+        a: "Both our Full Planning and Full Luxury / Destination Planning packages include end-to-end support from scratch:",
+        bullets: [
+          "Venue sourcing and selection",
+          "All vendor negotiations",
+          "Contract management",
+          "Detailed design conceptualisation",
+          "Guest management support",
+          "Multiple planning meetings",
+          "Site visits",
+          "Post-wedding vendor settlements",
+        ],
+        note: "For the Luxury & Destination package, all inclusions remain the same — what changes is the scale of execution, the level of detailing, personalisation, and the ratio of our team to your guests.",
+      },
+    ],
+    cta: {
+      eyebrow: "Still have a question?",
+      button: "Ask Our Planners",
+    },
+  },
+
   finalCta: {
     eyebrow: "Your destination awaits",
     title: "Can't decide?",
     titleAccent: "We'll help you choose.",
     subtitle:
       "Tell us your vibe, your guest count, your season — and we'll curate the perfect destination for your story.",
-    button: "Start the conversation",
+    button: "Get Free Wedding Consultation",
+    secondary: "Get Wedding Quote",
   },
 };

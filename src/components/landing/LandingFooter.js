@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { trackClient, getSessionId } from "@/lib/clientTelemetry";
 import { LotusFlourish } from "./Ornaments";
-import { WHATSAPP_URL, EMAIL, INSTAGRAM_URL, FACEBOOK_URL } from "./theme";
+import { WHATSAPP_URL, EMAIL, INSTAGRAM_URL, FACEBOOK_URL, FOOTER_ID } from "./theme";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -46,7 +46,7 @@ export default function LandingFooter() {
 
   return (
     // pb-28 on phones keeps the sticky CTA bar from covering the contact links
-    <footer className="bg-ink text-bg/55 pt-12 pb-28 md:pb-12 px-5 sm:px-8">
+    <footer id={FOOTER_ID} className="bg-ink text-bg/55 pt-12 pb-28 md:pb-12 px-5 sm:px-8">
       <div className="max-w-[880px] mx-auto flex flex-col items-center text-center gap-5">
         <LotusFlourish dark className="w-[140px]" />
         <div className="relative h-[44px] w-[200px]">

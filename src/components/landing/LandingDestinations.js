@@ -15,38 +15,83 @@ export default function LandingDestinations({ eyebrow, title, titleAccent, items
   const railRef = useRef(null);
   const [selected, setSelected] = useState(null);
 
-  // Seamless loop: the cards render three times; we start in the middle copy
-  // and teleport the scroll position by exactly one set-width when the user
-  // drifts toward either end. The teleport runs only after scrolling settles
-  // (debounced) so it never fights an in-flight swipe/snap animation — and
-  // since the copies are identical, the jump is invisible.
+  // Start the rail in the middle of the three identical copies so the loop has
+  // room to wrap either way. Runs once — the position is kept when the overlay
+  // opens and closes.
   useEffect(() => {
     const rail = railRef.current;
     if (!rail || rail.children.length < items.length * 2) return;
     const setWidth = rail.children[items.length].offsetLeft - rail.children[0].offsetLeft;
-    if (setWidth <= 0) return;
-    rail.scrollLeft = setWidth;
-    let timer;
-    const settle = () => {
-      const sl = rail.scrollLeft;
-      if (sl < setWidth * 0.6) rail.scrollLeft = sl + setWidth;
-      else if (sl >= setWidth * 1.6) rail.scrollLeft = sl - setWidth;
-    };
-    const onScroll = () => {
-      // Hard guard: during continuous fast swiping the settle below never
-      // runs, so teleport immediately before the physical ends are reachable.
-      const sl = rail.scrollLeft;
-      if (sl >= setWidth * 2) rail.scrollLeft = sl - setWidth;
-      else if (sl < setWidth * 0.45) rail.scrollLeft = sl + setWidth;
-      clearTimeout(timer);
-      timer = setTimeout(settle, 120);
-    };
-    rail.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      clearTimeout(timer);
-      rail.removeEventListener("scroll", onScroll);
-    };
+    if (setWidth > 0) rail.scrollLeft = setWidth;
   }, [items.length]);
+
+  // A single rAF controller drives the mobile rail — one owner of scrollLeft, so
+  // nothing fights it. It drifts forward at a slow constant speed off a
+  // fractional accumulator (so sub-pixel speeds still move smoothly), and wraps
+  // seamlessly by exactly one copy. Scroll-snap is switched off while it runs
+  // (snap yanks a free-running scroll back to a card, which is the stutter), and
+  // touching/wheeling the rail pauses the drift so the visitor can swipe freely
+  // — it follows their scroll while paused, wraps their manual scroll too, and
+  // resumes shortly after. Off while an overlay is open and for reduced motion.
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || selected) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const setWidth = rail.children[items.length]?.offsetLeft - rail.children[0]?.offsetLeft;
+    if (!setWidth || setWidth <= 0) return;
+
+    const prevSnap = rail.style.scrollSnapType;
+    rail.style.scrollSnapType = "none";
+
+    const SPEED = 20; // px per second — slow and steady
+    let raf = 0;
+    let last = 0;
+    let paused = false;
+    let resumeTimer;
+    let pos = rail.scrollLeft;
+
+    const pause = () => { paused = true; clearTimeout(resumeTimer); };
+    const resumeSoon = () => {
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => { paused = false; }, 1500);
+    };
+    const onWheel = () => { pause(); resumeSoon(); };
+    rail.addEventListener("pointerdown", pause);
+    rail.addEventListener("touchstart", pause, { passive: true });
+    rail.addEventListener("wheel", onWheel, { passive: true });
+    rail.addEventListener("pointerup", resumeSoon);
+    rail.addEventListener("touchend", resumeSoon, { passive: true });
+
+    const frame = (ts) => {
+      if (!last) last = ts;
+      const dt = Math.min(0.05, (ts - last) / 1000); // clamp tab-switch gaps
+      last = ts;
+      if (rail.clientWidth > 0) {
+        if (paused) {
+          pos = rail.scrollLeft; // follow the visitor's own scrolling
+        } else {
+          pos += SPEED * dt;
+          rail.scrollLeft = pos;
+        }
+        // Seamless wrap by exactly one copy — invisible, auto or manual
+        if (pos >= setWidth * 2) { pos -= setWidth; rail.scrollLeft = pos; }
+        else if (pos < setWidth * 0.5) { pos += setWidth; rail.scrollLeft = pos; }
+      }
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(resumeTimer);
+      rail.style.scrollSnapType = prevSnap;
+      rail.removeEventListener("pointerdown", pause);
+      rail.removeEventListener("touchstart", pause);
+      rail.removeEventListener("wheel", onWheel);
+      rail.removeEventListener("pointerup", resumeSoon);
+      rail.removeEventListener("touchend", resumeSoon);
+    };
+  }, [items.length, selected]);
 
   const handleMidCta = () => {
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_destinations" });
@@ -83,11 +128,16 @@ export default function LandingDestinations({ eyebrow, title, titleAccent, items
         )}
       </div>
       <div className="hidden md:grid max-w-[1160px] mx-auto px-8 grid-cols-2 gap-6">
-        {items.map((d, i) => (
-          <Reveal key={d.name} delay={(i % 2) * 0.1}>
-            <PlaceCard d={d} onOpen={() => setSelected(d)} className="w-full aspect-[16/10]" />
-          </Reveal>
-        ))}
+        {items.map((d, i) => {
+          // An odd number of cards would leave a gap on the last row — let the
+          // final card span both columns as a wide banner instead.
+          const wide = items.length % 2 === 1 && i === items.length - 1;
+          return (
+            <Reveal key={d.name} delay={(i % 2) * 0.1} className={wide ? "md:col-span-2" : ""}>
+              <PlaceCard d={d} onOpen={() => setSelected(d)} className={`w-full ${wide ? "aspect-[32/10]" : "aspect-[16/10]"}`} />
+            </Reveal>
+          );
+        })}
       </div>
 
       <DetailOverlay
@@ -103,7 +153,7 @@ export default function LandingDestinations({ eyebrow, title, titleAccent, items
                 onClick={handleOverlayEnquire}
                 className="flex-1 py-3.5 bg-gold text-ink text-[10.5px] tracking-[0.24em] uppercase font-semibold border border-gold rounded-[2px] shadow-[0_4px_16px_rgba(201,162,52,0.3)]"
               >
-                Plan my wedding here
+                Check Available Venues
               </button>
               <a
                 href={WHATSAPP_URL}
@@ -154,7 +204,7 @@ export default function LandingDestinations({ eyebrow, title, titleAccent, items
                   onClick={handleOverlayEnquire}
                   className="w-full py-4 bg-gold text-ink text-[11px] tracking-[0.28em] uppercase font-semibold border border-gold rounded-[2px] transition-all duration-300 hover:bg-ink hover:text-gold shadow-[0_8px_24px_rgba(201,162,52,0.28)]"
                 >
-                  Plan my wedding here
+                  Check Available Venues
                 </button>
                 <a
                   href={WHATSAPP_URL}
@@ -174,7 +224,7 @@ export default function LandingDestinations({ eyebrow, title, titleAccent, items
       <div className="text-center mt-8 md:mt-12 px-5">
         <button
           onClick={handleMidCta}
-          className="px-9 py-4 text-[11px] tracking-[0.28em] uppercase font-semibold text-gold border border-gold/60 rounded-[2px] transition-all duration-300 hover:bg-gold hover:text-ink hover:shadow-[0_0_24px_rgba(201,162,52,0.4)]"
+          className="px-9 py-4 text-[11px] tracking-[0.28em] uppercase font-semibold bg-gold text-ink border border-gold rounded-full transition-all duration-300 hover:bg-ink hover:text-gold shadow-[0_8px_24px_rgba(201,162,52,0.35)] hover:shadow-[0_10px_30px_rgba(26,20,8,0.2)]"
         >
           {midCta}
         </button>

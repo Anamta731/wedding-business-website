@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { trackClient } from "@/lib/clientTelemetry";
-import { scrollToEnquire, WHATSAPP_URL, PHONE_URL, ENQUIRE_ID, FINAL_CTA_ID } from "./theme";
+import { scrollToEnquire, WHATSAPP_URL, PHONE_URL, ENQUIRE_ID } from "./theme";
 
 // Phones only: an ink action bar fixed to the bottom — Enquire, a raised
-// gold Call disc centre-stage, and WhatsApp. Appears after the visitor
-// scrolls past the hero; hides while the enquiry card OR the final CTA
-// card is on screen (never stack duplicate CTAs).
-export default function StickyCtaBar() {
+// gold Call disc centre-stage, and WhatsApp. Appears after the visitor scrolls
+// past the hero and hides only while the hero enquiry card is on screen (so it
+// never duplicates the form itself); it stays visible through the rest of the
+// page, including the final CTA and footer. Pass enquireHref to send Enquire to
+// the full enquiry page instead of scrolling to the card.
+export default function StickyCtaBar({ enquireHref }) {
   const [pastHero, setPastHero] = useState(false);
   const [ctaInView, setCtaInView] = useState({});
 
@@ -20,10 +22,8 @@ export default function StickyCtaBar() {
   }, []);
 
   useEffect(() => {
-    const targets = [ENQUIRE_ID, FINAL_CTA_ID]
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
-    if (!targets.length) return;
+    const target = document.getElementById(ENQUIRE_ID);
+    if (!target) return;
     const observer = new IntersectionObserver(
       (entries) => {
         setCtaInView((prev) => {
@@ -34,13 +34,20 @@ export default function StickyCtaBar() {
       },
       { threshold: 0.15 }
     );
-    targets.forEach((t) => observer.observe(t));
+    observer.observe(target);
     return () => observer.disconnect();
   }, []);
 
-  const visible = pastHero && !Object.values(ctaInView).some(Boolean);
+  // Hide only while the hero enquiry card is on screen; visible everywhere else
+  // after the hero, including the final CTA section and footer.
+  const visible = pastHero && !ctaInView[ENQUIRE_ID];
 
   const handleEnquire = () => {
+    if (enquireHref) {
+      trackClient("CtaClick", { channel: "enquire_page", location: "lp_bottom_bar" });
+      window.location.href = enquireHref;
+      return;
+    }
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_bottom_bar" });
     scrollToEnquire();
   };

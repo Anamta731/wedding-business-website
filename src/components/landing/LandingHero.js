@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Blossom } from "./Ornaments";
 
 const SLIDE_MS = 6000;
 
 // Full-bleed crossfading image slider with the headline on the left and the
 // RSVP card (passed as children) laid over the imagery — beside the headline
 // on desktop, directly beneath it on phones.
-export default function LandingHero({ eyebrow, title, titleAccent, subtitle, placesLine, slides, children }) {
+export default function LandingHero({ eyebrow, title, titleAccent, subtitle, trustBadges = [], stats = [], slides, children }) {
   const [index, setIndex] = useState(0);
   const reduceMotion = useReducedMotion();
 
@@ -117,39 +116,54 @@ export default function LandingHero({ eyebrow, title, titleAccent, subtitle, pla
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.3 }}
-            className="text-bg/75 font-light text-[14px] sm:text-[15px] leading-relaxed max-w-[440px] mb-6"
+            transition={{ duration: 0.8, delay: 1.1 }}
+            className="text-bg/80 font-light text-[14px] sm:text-[15px] leading-relaxed max-w-[460px] mb-6"
           >
             {subtitle}
           </motion.p>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 1.7 }}
-            className="flex items-center gap-3 text-[10px] tracking-[0.34em] uppercase text-bg/75 font-medium [text-shadow:0_1px_14px_rgba(26,20,8,0.55)]"
-          >
-            <Blossom color="#C9A234" size={8} />
-            <span>{placesLine}</span>
-            <Blossom color="#C9A234" size={8} className="hidden sm:block" />
-          </motion.p>
 
-          {/* Slide progress ornaments — hit area padded to 44px without moving layout */}
-          <div className="flex gap-2.5 mt-5 lg:mt-9 pointer-events-auto">
-            {slides.map((s, i) => (
-              <button
-                key={s.image}
-                onClick={() => goTo(i)}
-                aria-label={`Show slide ${i + 1}`}
-                className="group px-1 -mx-1 py-[21px] -my-[13px]"
-              >
-                <span
-                  className={`block h-[2px] w-9 transition-all duration-500 ${
-                    i === index ? "bg-gold" : "bg-bg/30 group-hover:bg-bg/60"
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
+          {/* Trust cues — quick, scannable reassurance */}
+          {trustBadges.length > 0 && (
+            <motion.ul
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.25 }}
+              className="flex flex-wrap gap-x-5 gap-y-2 mb-7 max-w-[480px]"
+            >
+              {trustBadges.map((badge) => (
+                <li
+                  key={badge}
+                  className="flex items-center gap-1.5 text-bg/90 text-[12px] sm:text-[13px] font-light [text-shadow:0_1px_10px_rgba(26,20,8,0.5)]"
+                >
+                  <svg viewBox="0 0 20 20" className="w-3.5 h-3.5 text-gold shrink-0" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 10.5l4 4 8-9" />
+                  </svg>
+                  <span>{badge}</span>
+                </li>
+              ))}
+            </motion.ul>
+          )}
+
+          {/* Headline numbers — confident, evenly spaced, never crowded */}
+          {stats.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.45 }}
+              className="flex items-center gap-4 sm:gap-6 max-w-[460px]"
+            >
+              {stats.map((stat, i) => (
+                <div key={stat.label} className={`flex-1 ${i > 0 ? "border-l border-gold/25 pl-4 sm:pl-6" : ""}`}>
+                  <div className="font-heading text-gold font-light leading-none text-[30px] sm:text-[38px]">
+                    {stat.value}
+                  </div>
+                  <div className="text-bg/65 text-[9px] sm:text-[10px] tracking-[0.16em] uppercase font-medium mt-1.5 leading-tight">
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
         </div>
 
         {/* RSVP card slot — the invitation resting on the imagery */}

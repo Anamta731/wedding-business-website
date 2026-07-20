@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trackClient, getSessionId, getUserId } from "@/lib/clientTelemetry";
 import { Flourish, CornerFrame } from "./Ornaments";
-import { WHATSAPP_URL, EMAIL } from "./theme";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -307,55 +306,10 @@ export default function LandingContactPage({ backHref }) {
 
               {error && (
                 <p role="alert" className="text-[12px] text-[#9B3324] font-light mt-4">
-                  We couldn&rsquo;t send that — please try again, or{" "}
-                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
-                    message us on WhatsApp
-                  </a>
-                  .
+                  We couldn&rsquo;t send that — please check your details and try again.
                 </p>
               )}
             </form>
-
-            {/* Alternative contact */}
-            <div className="mt-6 pt-5 border-t border-ink/10">
-              <p className="text-[9px] tracking-[0.28em] uppercase text-ink/40 font-medium mb-3">Or reach us directly</p>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackClient("CtaClick", { channel: "whatsapp", location: "lp_enquire_page" })}
-                  className="group flex flex-col items-center text-center sm:flex-row sm:text-left gap-2 sm:gap-4 border border-ink/10 rounded-[4px] px-3 py-4 sm:px-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/60 hover:bg-[#FAF7F2]"
-                >
-                  <span className="w-10 h-10 sm:w-11 sm:h-11 bg-[#F5F0E8] border border-[#25D366]/30 rounded-full flex items-center justify-center shrink-0" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#25D366">
-                      <path d="M12.04 2C6.58 2 2.15 6.34 2.15 11.69c0 1.7.46 3.36 1.32 4.82L2 22l5.62-1.43a10.1 10.1 0 0 0 4.42 1.03c5.46 0 9.9-4.34 9.9-9.69S17.5 2 12.04 2Zm0 17.93a8.36 8.36 0 0 1-4.05-1.05l-.29-.16-3.33.85.89-3.17-.18-.31a7.97 7.97 0 0 1-1.25-4.4c0-4.43 3.68-8.03 8.21-8.03 4.54 0 8.22 3.6 8.22 8.03 0 4.44-3.68 8.24-8.22 8.24Zm4.51-6.02c-.25-.12-1.47-.71-1.7-.79-.23-.09-.4-.12-.56.12-.17.24-.64.79-.78.95-.14.16-.29.18-.53.06-.25-.12-1.04-.38-1.98-1.2-.73-.64-1.23-1.44-1.37-1.68-.14-.24-.01-.37.11-.49.11-.11.25-.29.37-.43.12-.14.17-.24.25-.4.08-.16.04-.3-.02-.43-.06-.12-.56-1.32-.77-1.81-.2-.47-.41-.41-.56-.42h-.48c-.17 0-.43.06-.66.3-.23.24-.87.83-.87 2.03 0 1.19.89 2.35 1.01 2.51.12.16 1.75 2.62 4.24 3.67.59.25 1.05.4 1.41.51.59.18 1.13.16 1.56.1.47-.07 1.47-.59 1.68-1.15.21-.57.21-1.05.14-1.15-.06-.11-.22-.17-.46-.29Z" />
-                    </svg>
-                  </span>
-                  <span className="flex flex-col items-center sm:items-start">
-                    <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-ink">WhatsApp</span>
-                    <span className="text-[11px] text-muted mt-0.5">Quick message</span>
-                  </span>
-                </a>
-
-                <a
-                  href={`mailto:${EMAIL}`}
-                  onClick={() => trackClient("CtaClick", { channel: "email", location: "lp_enquire_page" })}
-                  className="group flex flex-col items-center text-center sm:flex-row sm:text-left gap-2 sm:gap-4 border border-ink/10 rounded-[4px] px-3 py-4 sm:px-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-gold/60 hover:bg-[#FAF7F2]"
-                >
-                  <span className="w-10 h-10 sm:w-11 sm:h-11 bg-[#F5F0E8] border border-ink/10 rounded-full flex items-center justify-center shrink-0" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-gold" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="4" width="20" height="16" rx="2" />
-                      <path d="M2 7l10 7 10-7" />
-                    </svg>
-                  </span>
-                  <span className="flex flex-col items-center sm:items-start">
-                    <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-ink">Email</span>
-                    <span className="text-[11px] text-muted mt-0.5">Write to us</span>
-                  </span>
-                </a>
-              </div>
-            </div>
           </div>
         </div>
 

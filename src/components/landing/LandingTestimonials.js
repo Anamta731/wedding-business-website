@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useLenis } from "@studio-freight/react-lenis";
 import { SectionHeading } from "./LandingSection";
+import { startMarquee } from "./theme";
 
 // Ink interlude: the two featured couples exactly as on the main site —
 // full-bleed photo cards with a preview quote that expand into a full-story
@@ -12,6 +14,50 @@ import { SectionHeading } from "./LandingSection";
 export default function LandingTestimonials({ eyebrow, title, titleAccent, featured, quotes = [] }) {
   const [active, setActive] = useState(null);
   const [showGrid, setShowGrid] = useState(false);
+  const quoteRailRef = useRef(null);
+
+  // Once the "More Love Stories" grid is open, the mobile quote strip drifts
+  // continuously at a very slow, constant speed, looping seamlessly across three
+  // identical copies (start in the middle copy so the wrap is invisible). Pauses
+  // while the visitor is swiping (resumes 2s later); off for reduced-motion
+  // users and on desktop (the strip is a static masonry grid there).
+  useEffect(() => {
+    const rail = quoteRailRef.current;
+    if (!rail || !showGrid || quotes.length < 2) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const setWidth = rail.children[quotes.length].offsetLeft - rail.children[0].offsetLeft;
+    if (setWidth <= 0) return;
+    rail.scrollLeft = setWidth; // begin in the middle copy
+
+    let paused = false;
+    let resumeTimer;
+    const pause = () => { paused = true; clearTimeout(resumeTimer); };
+    const resumeSoon = () => {
+      clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(() => { paused = false; }, 2000);
+    };
+    rail.addEventListener("pointerdown", pause);
+    rail.addEventListener("touchstart", pause, { passive: true });
+    rail.addEventListener("pointerup", resumeSoon);
+    rail.addEventListener("touchend", resumeSoon, { passive: true });
+
+    const stop = startMarquee(rail, {
+      speed: 18,
+      wrapAt: setWidth * 2,
+      wrapBy: setWidth,
+      isPaused: () => paused,
+    });
+
+    return () => {
+      stop();
+      clearTimeout(resumeTimer);
+      rail.removeEventListener("pointerdown", pause);
+      rail.removeEventListener("touchstart", pause);
+      rail.removeEventListener("pointerup", resumeSoon);
+      rail.removeEventListener("touchend", resumeSoon);
+    };
+  }, [showGrid, quotes.length]);
 
   return (
     <section className="bg-ink py-10 md:py-14 px-5 sm:px-8 relative overflow-hidden">
@@ -88,11 +134,14 @@ export default function LandingTestimonials({ eyebrow, title, titleAccent, featu
             marginTop: showGrid ? "36px" : "0px",
           }}
         >
-          {/* Mobile — horizontal snap scroll */}
-          <div className="md:hidden flex gap-4 overflow-x-auto -mx-5 px-5 pb-4" style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
-            {quotes.map((q) => (
-              <QuoteCard key={q.author} q={q} className="flex-shrink-0 w-[78vw] p-6" style={{ scrollSnapAlign: "start" }} />
-            ))}
+          {/* Mobile — horizontal strip. Rendered as three identical copies so
+              the slow auto-drift can loop seamlessly (see the effect above). */}
+          <div ref={quoteRailRef} className="md:hidden flex gap-4 overflow-x-auto -mx-5 px-5 pb-4" style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+            {[0, 1, 2].map((copy) =>
+              quotes.map((q) => (
+                <QuoteCard key={`${copy}-${q.author}`} q={q} className="flex-shrink-0 w-[78vw] p-6" style={{ scrollSnapAlign: "start" }} />
+              ))
+            )}
           </div>
           {/* Desktop/tablet — masonry grid */}
           <div className="hidden md:grid md:grid-cols-6 gap-4 max-w-[1000px] mx-auto">
@@ -131,15 +180,28 @@ function QuoteCard({ q, className = "", style }) {
 // Full-story overlay — ink panel, scrollable text left, photo right (desktop).
 function StoryOverlay({ t, onClose }) {
   const reduceMotion = useReducedMotion();
+  const lenis = useLenis();
 
+  // Scroll lock — lenis.stop() locks the page in place without moving scroll,
+  // so closing lands exactly where the visitor was (see DetailOverlay). The
+  // position:fixed path is only a fallback when Lenis isn't available.
   useEffect(() => {
     if (!t) return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+
+    if (lenis) {
+      lenis.stop();
+      return () => {
+        lenis.start();
+        window.removeEventListener("keydown", onKey);
+      };
+    }
+
     const scrollY = window.scrollY;
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = "100%";
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.position = "";
       document.body.style.top = "";
@@ -147,7 +209,7 @@ function StoryOverlay({ t, onClose }) {
       window.scrollTo(0, scrollY);
       window.removeEventListener("keydown", onKey);
     };
-  }, [t, onClose]);
+  }, [t, onClose, lenis]);
 
   return (
     <AnimatePresence>

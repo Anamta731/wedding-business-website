@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useLenis } from "@studio-freight/react-lenis";
 
 // Shared detail overlay for the landing kit: bottom sheet on phones, split
 // panel (content | photo) on desktop. Used by services and destinations —
@@ -11,17 +12,30 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 // Sits above the chatbot (z-2200).
 export default function DetailOverlay({ item, onClose, image, imageAlt, ariaLabel, footer, children }) {
   const reduceMotion = useReducedMotion();
+  const lenis = useLenis();
 
-  // Body scroll lock + Escape to close (position:fixed survives Lenis touch
-  // scrolling — same pattern as the main site's overlays).
+  // Scroll lock + Escape to close. Preferred lock is lenis.stop(): it blocks
+  // wheel/touch on the page WITHOUT moving the scroll position (and still lets
+  // the panel's own data-lenis-prevent area scroll), so closing lands exactly
+  // where the visitor was — no jump to the form at the top. The position:fixed
+  // path is only a fallback for when the Lenis instance isn't available.
   useEffect(() => {
     if (!item) return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+
+    if (lenis) {
+      lenis.stop();
+      return () => {
+        lenis.start();
+        window.removeEventListener("keydown", onKey);
+      };
+    }
+
     const scrollY = window.scrollY;
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
     document.body.style.width = "100%";
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.position = "";
       document.body.style.top = "";
@@ -29,7 +43,7 @@ export default function DetailOverlay({ item, onClose, image, imageAlt, ariaLabe
       window.scrollTo(0, scrollY);
       window.removeEventListener("keydown", onKey);
     };
-  }, [item, onClose]);
+  }, [item, onClose, lenis]);
 
   return (
     <AnimatePresence>
