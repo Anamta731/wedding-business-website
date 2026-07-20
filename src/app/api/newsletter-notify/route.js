@@ -35,6 +35,30 @@ function escHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY;
+
+// Verify a reCAPTCHA v3 token — blocks the dominant abuse vector for this public
+// endpoint (a direct POST with a missing/forged token). Skipped when no secret is
+// configured, and fails open on Google/infra errors so a real signup is never lost.
+async function verifyRecaptcha(token) {
+  if (!RECAPTCHA_SECRET) return { ok: true, skipped: true };
+  if (!token) return { ok: false, reason: "missing-token" };
+  try {
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret: RECAPTCHA_SECRET, response: token }),
+    });
+    const data = await res.json();
+    if (data?.success !== true) return { ok: false, reason: "verify-failed" };
+    return { ok: true };
+  } catch {
+    return { ok: true, reason: "verify-error" }; // fail open — never lose a signup to an outage
+  }
+}
+
 // A newsletter opt-in is a mailing-list signup, not a scored lead — the email
 // deliberately carries no intent badge, transcript, or "cities explored" so the
 // team can tell it apart at a glance from a real chatbot handoff.
@@ -49,10 +73,28 @@ export async function POST(req) {
     source     = "Landing page footer",
     session_id = "unknown",
     is_test    = false,
+    botField   = "",
+    recaptchaToken,
   } = body ?? {};
 
-  if (!contact || typeof contact !== "string") {
-    return Response.json({ error: "contact (email) is required." }, { status: 400 });
+  if (!contact || typeof contact !== "string" || !EMAIL_RE.test(contact.trim())) {
+    return Response.json({ error: "A valid email address is required." }, { status: 400 });
+  }
+
+  // Honeypot — only bots fill this hidden field. Accept silently (so the bot gets
+  // no signal it was caught) but never send the notification email.
+  if (typeof botField === "string" && botField.trim() !== "") {
+    return Response.json({ success: true });
+  }
+
+  // Block missing/forged reCAPTCHA tokens — the main direct-POST spam vector.
+  const recaptcha = await verifyRecaptcha(recaptchaToken);
+  if (!recaptcha.ok) {
+    console.warn("[newsletter-notify] reCAPTCHA blocked:", recaptcha.reason);
+    return Response.json(
+      { success: false, error: "Your submission could not be verified. Please try again." },
+      { status: 400 }
+    );
   }
 
   try {

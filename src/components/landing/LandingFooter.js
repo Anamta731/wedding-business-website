@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { trackClient, getSessionId } from "@/lib/clientTelemetry";
 import { LotusFlourish } from "./Ornaments";
 import { WHATSAPP_URL, EMAIL, INSTAGRAM_URL, FACEBOOK_URL, FOOTER_ID } from "./theme";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
 // Minimal ink footer: identity, contact, stay-connected signup, legal.
 // No site navigation — the landing page keeps its focus to the very end.
@@ -15,6 +16,37 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function LandingFooter() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle | loading | done | error
+  const botRef = useRef(null);
+
+  // Load reCAPTCHA v3 once, guarded so it never double-injects if the hero
+  // enquiry form already loaded it — same protection as the enquiry form.
+  useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY) return;
+    if (document.querySelector("script[data-recaptcha]")) return;
+    const script = document.createElement("script");
+    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.async = true;
+    script.defer = true;
+    script.setAttribute("data-recaptcha", "true");
+    document.head.appendChild(script);
+  }, []);
+
+  const getRecaptchaToken = async () => {
+    if (!RECAPTCHA_SITE_KEY || typeof window === "undefined") return null;
+    for (let i = 0; i < 30 && !window.grecaptcha?.execute; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    if (!window.grecaptcha?.execute) return null;
+    try {
+      return await new Promise((resolve, reject) => {
+        window.grecaptcha.ready(() => {
+          window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: "newsletter" }).then(resolve).catch(reject);
+        });
+      });
+    } catch {
+      return null;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +57,7 @@ export default function LandingFooter() {
     }
     setStatus("loading");
     try {
+      const recaptchaToken = await getRecaptchaToken();
       const res = await fetch("/api/newsletter-notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,6 +65,8 @@ export default function LandingFooter() {
           contact: value,
           source: "Landing page footer — stay connected",
           session_id: getSessionId(),
+          botField: botRef.current?.value || "",
+          recaptchaToken,
         }),
       });
       if (!res.ok) throw new Error("failed");
@@ -63,6 +98,16 @@ export default function LandingFooter() {
             <p className="text-[12px] text-gold font-light py-3">You&rsquo;re on the list — see you in your inbox.</p>
           ) : (
             <form onSubmit={handleSubmit} className="flex">
+              {/* Honeypot — invisible to people, filled only by bots */}
+              <input
+                ref={botRef}
+                type="text"
+                name="company_website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", overflow: "hidden" }}
+              />
               <input
                 type="email"
                 value={email}
