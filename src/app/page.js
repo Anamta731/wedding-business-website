@@ -429,7 +429,7 @@ export default function HomePage() {
           <h2 className="section-title reveal text-gold">Begin Your <em className="italic">Journey With Us</em></h2>
           <GoldDivider darkBg flip className="mt-2 mb-8 reveal" />
           <p className="subtitle reveal text-surface/60 text-sm tracking-widest mb-6 uppercase">Let's craft the wedding you've always envisioned.</p>
-          <Link href="/contact" className="btn-gold btn-pulse reveal">Start Planning →</Link>
+          <Link href="/contact" className="btn-gold btn-pulse reveal">Share Your Vision →</Link>
         </div>
       </section>
 
