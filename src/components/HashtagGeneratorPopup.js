@@ -123,6 +123,9 @@ const HashtagGeneratorPopup = () => {
     });
   };
 
+  // Landing pages (/lp/*) stay distraction-free — no popup there
+  if (pathname?.startsWith("/lp")) return null;
+
   return (
     <>
       {/* Hashtag Tab — scroll-triggered, spring pop entrance */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { trackClient, getSessionId } from "@/lib/clientTelemetry";
 
 // Render inline markdown: **bold** → gold semibold span
@@ -14,7 +15,7 @@ function renderInline(text) {
 }
 
 // Lightweight markdown renderer — handles bold, bullet lists, paragraphs, and action markers
-function BotMessage({ text, onCtaClick }) {
+function BotMessage({ text, onCtaClick, contactHref = "/contact" }) {
   if (!text) return null;
 
   const blocks = [];
@@ -61,7 +62,7 @@ function BotMessage({ text, onCtaClick }) {
       blocks.push(
         onCtaClick
           ? <button key={idx} onClick={onCtaClick} className={cls}>Schedule a Call →</button>
-          : <a key={idx} href="/contact" className={cls}>Schedule a Call →</a>
+          : <a key={idx} href={contactHref} className={cls}>Schedule a Call →</a>
       );
       if (parts[1]?.trim()) blocks.push(<p key={blocks.length} className="leading-[1.75]">{renderInline(parts[1].trim())}</p>);
       continue;
@@ -99,6 +100,13 @@ const INITIAL_MESSAGE = {
 };
 
 export default function Chatbot() {
+  const pathname = usePathname();
+  // On /lp landing pages, in-chat "contact" / "speak to a planner" actions stay
+  // inside the campaign funnel (the landing enquiry page) instead of leaving for
+  // the main-site /contact. Off /lp, behaviour is unchanged.
+  const contactHref = pathname?.startsWith("/lp")
+    ? `${pathname.replace(/\/+$/, "")}/enquire`
+    : "/contact";
   const [open, setOpen]               = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [messages, setMessages]       = useState([INITIAL_MESSAGE]);
@@ -258,7 +266,7 @@ export default function Chatbot() {
   const handleCtaToContact = () => {
     saveChatContext();
     fireLeadNotify();
-    window.location.href = "/contact";
+    window.location.href = contactHref;
   };
 
   const handleFeedback = (vote, msgIndex) => {
@@ -407,6 +415,15 @@ export default function Chatbot() {
   const showHandoffCta = accIntent.stage === "handoff" ||
     (accIntent.intent_level === "high" && messages.length > 6);
 
+  // Landing pages (/lp/*): the chat concierge renders, but the quick-action
+  // rail stays off (its Enquiry link would navigate visitors off the landing
+  // page, and the landing bottom bar already covers call/WhatsApp). The
+  // launcher lifts above the landing page's bottom action bar on phones.
+  const isLp = pathname?.startsWith("/lp") ?? false;
+  // The landing enquiry page (/lp/*/enquire) is a focused, single-task form —
+  // the concierge is hidden entirely there so nothing competes with the form.
+  const isLpEnquire = isLp && (pathname?.endsWith("/enquire") ?? false);
+
   return (
     <>
       {/* ── Mobile backdrop when chat is open ──────────────────────── */}
@@ -418,7 +435,7 @@ export default function Chatbot() {
       )}
 
       {/* ── Right sidebar: Call / Email / WhatsApp ─────────────────── */}
-      <div className={`fixed right-0 top-1/2 -translate-y-1/2 z-[2001] ${open ? "hidden sm:block" : ""}`}>
+      <div className={`fixed right-0 top-1/2 -translate-y-1/2 z-[2001] ${isLp ? "hidden" : ""} ${open ? "hidden sm:block" : ""}`}>
         {sidebarOpen ? (
           <div className="bg-[#1A1408] border border-[#C9A234]/25 border-r-0 rounded-l-2xl flex flex-col items-center shadow-[-8px_0_40px_rgba(0,0,0,0.45)]">
 
@@ -497,7 +514,7 @@ export default function Chatbot() {
       </div>
 
       {/* ── Bottom-right: Chat panel + toggle ──────────────────────── */}
-      <div className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-[2000] flex flex-col gap-3 items-end pointer-events-none">
+      <div className={`fixed ${isLpEnquire ? "hidden" : ""} ${isLp ? "bottom-[104px] md:bottom-8" : "bottom-6 sm:bottom-8"} right-4 sm:right-8 z-[2000] flex flex-col gap-3 items-end pointer-events-none`}>
 
         {/* Chat panel */}
         <div
@@ -608,7 +625,7 @@ export default function Chatbot() {
                             </span>
                           )}
                         </span>
-                      ) : msg.role === "bot" ? <BotMessage text={msg.text} onCtaClick={isLastBotMsg ? handleCtaToContact : undefined} /> : msg.text}
+                      ) : msg.role === "bot" ? <BotMessage text={msg.text} onCtaClick={isLastBotMsg ? handleCtaToContact : undefined} contactHref={contactHref} /> : msg.text}
                     </div>
                   </div>
 
@@ -685,7 +702,7 @@ export default function Chatbot() {
               <div className="flex flex-col items-start gap-2 pl-9">
                 <p className="text-[10px] text-[#9A8F7E] tracking-[0.15em] uppercase">Ready to begin?</p>
                 <button
-                  onClick={() => { saveChatContext(); fireLeadNotify(); setOpen(false); window.location.href = "/contact"; }}
+                  onClick={() => { saveChatContext(); fireLeadNotify(); setOpen(false); window.location.href = contactHref; }}
                   className="text-[11px] font-medium tracking-[0.2em] uppercase bg-[#C9A234] text-[#1A1408] px-4 py-2.5 rounded-full hover:bg-[#C9A234]/90 transition-colors duration-200"
                 >
                   Begin Your Journey →
@@ -818,7 +835,7 @@ export default function Chatbot() {
               </button>
             </div>
             <a
-              href="/contact"
+              href={contactHref}
               className="mt-2.5 flex items-center justify-center gap-1.5 w-full py-2 rounded-lg border border-[#C9A234]/60 bg-[#C9A234]/10 text-[#C9A234] text-[10px] font-medium tracking-[0.18em] uppercase hover:bg-[#C9A234]/20 hover:border-[#C9A234] transition-all duration-200 shadow-[0_0_10px_rgba(201,162,52,0.15)]"
             >
               <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -31,6 +31,9 @@ export default function Navigation() {
     }
   }, [mobileOpen]);
 
+  // Landing pages (/lp/*) render their own slim header — no site menu there
+  if (pathname?.startsWith("/lp")) return null;
+
   const navLinks = [
     { name: "About", href: "/about" },
     { name: "Services", href: "/services" },
