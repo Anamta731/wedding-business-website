@@ -9,28 +9,30 @@ import { Flourish, CornerFrame } from "./Ornaments";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
+// min/max = expected national number length (digits, without the dial code) for
+// that country's mobile numbers — used to validate the phone field per country.
 const DIAL_CODES = [
-  { code: "+91", flag: "🇮🇳", name: "India" },
-  { code: "+44", flag: "🇬🇧", name: "UK" },
-  { code: "+1", flag: "🇺🇸", name: "US / Canada" },
-  { code: "+971", flag: "🇦🇪", name: "UAE" },
-  { code: "+65", flag: "🇸🇬", name: "Singapore" },
-  { code: "+61", flag: "🇦🇺", name: "Australia" },
-  { code: "+64", flag: "🇳🇿", name: "New Zealand" },
-  { code: "+27", flag: "🇿🇦", name: "South Africa" },
-  { code: "+230", flag: "🇲🇺", name: "Mauritius" },
-  { code: "+60", flag: "🇲🇾", name: "Malaysia" },
-  { code: "+974", flag: "🇶🇦", name: "Qatar" },
-  { code: "+973", flag: "🇧🇭", name: "Bahrain" },
-  { code: "+965", flag: "🇰🇼", name: "Kuwait" },
-  { code: "+968", flag: "🇴🇲", name: "Oman" },
-  { code: "+33", flag: "🇫🇷", name: "France" },
-  { code: "+49", flag: "🇩🇪", name: "Germany" },
-  { code: "+39", flag: "🇮🇹", name: "Italy" },
-  { code: "+31", flag: "🇳🇱", name: "Netherlands" },
-  { code: "+34", flag: "🇪🇸", name: "Spain" },
-  { code: "+46", flag: "🇸🇪", name: "Sweden" },
-  { code: "+41", flag: "🇨🇭", name: "Switzerland" },
+  { code: "+91", flag: "🇮🇳", name: "India", min: 10, max: 10 },
+  { code: "+44", flag: "🇬🇧", name: "UK", min: 10, max: 10 },
+  { code: "+1", flag: "🇺🇸", name: "US / Canada", min: 10, max: 10 },
+  { code: "+971", flag: "🇦🇪", name: "UAE", min: 9, max: 9 },
+  { code: "+65", flag: "🇸🇬", name: "Singapore", min: 8, max: 8 },
+  { code: "+61", flag: "🇦🇺", name: "Australia", min: 9, max: 9 },
+  { code: "+64", flag: "🇳🇿", name: "New Zealand", min: 8, max: 10 },
+  { code: "+27", flag: "🇿🇦", name: "South Africa", min: 9, max: 9 },
+  { code: "+230", flag: "🇲🇺", name: "Mauritius", min: 7, max: 8 },
+  { code: "+60", flag: "🇲🇾", name: "Malaysia", min: 9, max: 10 },
+  { code: "+974", flag: "🇶🇦", name: "Qatar", min: 8, max: 8 },
+  { code: "+973", flag: "🇧🇭", name: "Bahrain", min: 8, max: 8 },
+  { code: "+965", flag: "🇰🇼", name: "Kuwait", min: 8, max: 8 },
+  { code: "+968", flag: "🇴🇲", name: "Oman", min: 8, max: 8 },
+  { code: "+33", flag: "🇫🇷", name: "France", min: 9, max: 9 },
+  { code: "+49", flag: "🇩🇪", name: "Germany", min: 10, max: 11 },
+  { code: "+39", flag: "🇮🇹", name: "Italy", min: 9, max: 10 },
+  { code: "+31", flag: "🇳🇱", name: "Netherlands", min: 9, max: 9 },
+  { code: "+34", flag: "🇪🇸", name: "Spain", min: 9, max: 9 },
+  { code: "+46", flag: "🇸🇪", name: "Sweden", min: 7, max: 9 },
+  { code: "+41", flag: "🇨🇭", name: "Switzerland", min: 9, max: 9 },
 ];
 
 const MONTHS = [
@@ -48,6 +50,7 @@ export default function LandingContactPage({ backHref }) {
   const [error, setError] = useState(false);
   const [dialCode, setDialCode] = useState("+91");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [weddingMonth, setWeddingMonth] = useState("");
   const [weddingYear, setWeddingYear] = useState("");
   const [sourcePagePath, setSourcePagePath] = useState("");
@@ -56,6 +59,7 @@ export default function LandingContactPage({ backHref }) {
 
   const currentYear = new Date().getFullYear();
   const weddingYears = Array.from({ length: 8 }, (_, i) => currentYear + i);
+  const country = DIAL_CODES.find((c) => c.code === dialCode) || DIAL_CODES[0];
 
   useEffect(() => {
     setSourcePagePath(window.location.origin + window.location.pathname);
@@ -109,6 +113,16 @@ export default function LandingContactPage({ backHref }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Phone is optional, but if given it must match the country's expected length.
+    if (phoneNumber && (phoneNumber.length < country.min || phoneNumber.length > country.max)) {
+      setPhoneError(
+        country.min === country.max
+          ? `Please enter a ${country.min}-digit ${country.name} number.`
+          : `Please enter a ${country.min}–${country.max} digit ${country.name} number.`
+      );
+      return;
+    }
+    setPhoneError("");
     setStatus("loading");
     setError(false);
     const form = e.target;
@@ -215,7 +229,7 @@ export default function LandingContactPage({ backHref }) {
                       <select
                         className="lpc-dial"
                         value={dialCode}
-                        onChange={(e) => setDialCode(e.target.value)}
+                        onChange={(e) => { setDialCode(e.target.value); if (phoneError) setPhoneError(""); }}
                         aria-label="Country dial code"
                         autoComplete="tel-country-code"
                       >
@@ -229,11 +243,16 @@ export default function LandingContactPage({ backHref }) {
                         id="lpc-phone"
                         inputMode="numeric"
                         autoComplete="tel-national"
+                        maxLength={country.max}
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                        onChange={(e) => { setPhoneNumber(e.target.value.replace(/\D/g, "")); if (phoneError) setPhoneError(""); }}
+                        aria-invalid={phoneError ? "true" : undefined}
                         placeholder="Enter number"
                       />
                     </div>
+                    {phoneError && (
+                      <p role="alert" className="text-[11px] text-[#9B3324] font-light mt-1.5">{phoneError}</p>
+                    )}
                   </div>
                 </div>
               </div>
