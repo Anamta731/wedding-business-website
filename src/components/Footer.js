@@ -77,7 +77,8 @@ export default function Footer() {
           <a href="https://www.linkedin.com/company/125034077/" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">LinkedIn</a>
           <a href="/contact" className="hover:text-gold transition-colors">WhatsApp</a>
         </div>
-        <p className="uppercase">Privacy · Terms</p>
+        {/* TODO: terms page — add "Terms" link here once a /terms page exists */}
+        <Link href="/privacy-policy" className="uppercase hover:text-gold transition-colors">Privacy</Link>
       </div>
     </footer>
   );

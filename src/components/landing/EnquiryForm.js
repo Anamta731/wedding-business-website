@@ -242,7 +242,9 @@ export default function EnquiryForm({ heading, subheading }) {
               className="mt-[2px] w-3.5 h-3.5 shrink-0 accent-[#C9A234] cursor-pointer"
             />
             <span className="text-[10.5px] text-muted font-light leading-snug text-left">
-              I agree to Vows &amp; Vedas using these details to contact me about my enquiry.
+              I agree to Vows &amp; Vedas using these details to contact me about my enquiry, as
+              described in our{" "}
+              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-gold underline underline-offset-2 hover:opacity-70 transition-opacity">Privacy Policy</a>.
             </span>
           </label>
 

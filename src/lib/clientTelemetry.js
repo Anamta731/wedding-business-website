@@ -12,6 +12,21 @@
 
 const SID_KEY = "vv_sid"; // per-tab session (sessionStorage)
 const UID_KEY = "vv_uid"; // anonymous, persistent visitor (localStorage)
+const CONSENT_KEY = "vv_consent"; // cookie-banner choice: "all" | "essential"
+
+// Consent gate (DPDP consent-first). First-party App Insights telemetry is
+// treated as analytics storage, so we only emit events — and only generate the
+// vv_uid / vv_sid identifiers — once the visitor has accepted analytics cookies
+// via the banner ("Accept all"). No choice yet, or "Essential only", = no telemetry.
+// NOTE: this reduces the funnel workbook to consenting visitors only.
+function analyticsConsentGranted() {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(CONSENT_KEY) === "all";
+  } catch {
+    return false;
+  }
+}
 
 function uuid() {
   try {
@@ -62,6 +77,7 @@ export function getSessionId() {
  */
 export function trackClient(name, properties = {}) {
   if (typeof window === "undefined") return;
+  if (!analyticsConsentGranted()) return; // gated on analytics_storage consent
   try {
     const payload = {
       name,

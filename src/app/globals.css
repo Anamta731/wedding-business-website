@@ -93,6 +93,67 @@ html, body {
 }
 
 @layer components {
+  /* Privacy policy page — long-form legal prose */
+  .policy-section {
+    /* override the global `section { padding: … }` rule — legal prose sets its own rhythm */
+    padding: 0;
+    margin-top: 26px;
+    scroll-margin-top: 96px;
+  }
+  .policy-h2 {
+    @apply font-heading font-light text-ink;
+    font-size: clamp(22px, 2.6vw, 28px);
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+  .policy-p {
+    @apply font-body font-light;
+    color: var(--color-ink);
+    opacity: 0.75;
+    font-size: 14px;
+    line-height: 1.9;
+    margin-bottom: 16px;
+  }
+  .policy-strong {
+    @apply font-medium;
+    opacity: 1;
+    color: var(--color-ink);
+  }
+  .policy-list {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+  }
+  .policy-list li {
+    @apply font-body font-light;
+    color: var(--color-ink);
+    opacity: 0.75;
+    font-size: 14px;
+    line-height: 1.8;
+    padding-left: 22px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .policy-list li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 12px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-gold);
+  }
+  .policy-link {
+    @apply text-gold;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: opacity 0.2s;
+  }
+  .policy-link:hover {
+    opacity: 0.7;
+  }
+
   /* Restore EXACT styles from original CSS */
   #progress-bar {
     position: fixed; top: 0; left: 0; height: 2px; 

@@ -329,6 +329,11 @@ export default function ContactPage() {
                   <span className="absolute inset-0 flex items-center justify-center text-lg">✓</span>
                 )}
               </button>
+              <p className="mt-5 text-[11px] leading-[1.7] text-ink/45 font-light max-w-[440px]">
+                By submitting, you agree to our{" "}
+                <Link href="/privacy-policy" className="text-gold hover:opacity-70 transition-opacity underline underline-offset-2">Privacy Policy</Link>
+                . We&apos;ll use your details to respond to your enquiry.
+              </p>
             </div>
           </form>
 
