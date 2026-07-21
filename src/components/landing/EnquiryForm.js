@@ -8,17 +8,19 @@ import { WHATSAPP_URL, ENQUIRE_ID } from "./theme";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
+// min/max = expected national number length (digits, without the dial code)
+// for that country's mobile numbers — used to validate the phone field.
 const DIAL_CODES = [
-  { code: "+91", label: "🇮🇳 +91" },
-  { code: "+44", label: "🇬🇧 +44" },
-  { code: "+1", label: "🇺🇸 +1" },
-  { code: "+971", label: "🇦🇪 +971" },
-  { code: "+65", label: "🇸🇬 +65" },
-  { code: "+61", label: "🇦🇺 +61" },
-  { code: "+49", label: "🇩🇪 +49" },
-  { code: "+33", label: "🇫🇷 +33" },
-  { code: "+31", label: "🇳🇱 +31" },
-  { code: "+34", label: "🇪🇸 +34" },
+  { code: "+91", label: "🇮🇳 +91", name: "India", min: 10, max: 10 },
+  { code: "+44", label: "🇬🇧 +44", name: "UK", min: 10, max: 10 },
+  { code: "+1", label: "🇺🇸 +1", name: "US / Canada", min: 10, max: 10 },
+  { code: "+971", label: "🇦🇪 +971", name: "UAE", min: 9, max: 9 },
+  { code: "+65", label: "🇸🇬 +65", name: "Singapore", min: 8, max: 8 },
+  { code: "+61", label: "🇦🇺 +61", name: "Australia", min: 9, max: 9 },
+  { code: "+49", label: "🇩🇪 +49", name: "Germany", min: 10, max: 11 },
+  { code: "+33", label: "🇫🇷 +33", name: "France", min: 9, max: 9 },
+  { code: "+31", label: "🇳🇱 +31", name: "Netherlands", min: 9, max: 9 },
+  { code: "+34", label: "🇪🇸 +34", name: "Spain", min: 9, max: 9 },
 ];
 
 // The RSVP card — the landing page's signature element and its entire goal.
@@ -30,9 +32,11 @@ export default function EnquiryForm({ heading, subheading }) {
   const [error, setError] = useState(false);
   const [dialCode, setDialCode] = useState("+91");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [sourcePagePath, setSourcePagePath] = useState("");
   const [referrerUrl, setReferrerUrl] = useState("");
   const formStartedRef = useRef(false);
+  const country = DIAL_CODES.find((c) => c.code === dialCode) || DIAL_CODES[0];
 
   useEffect(() => {
     setSourcePagePath(window.location.origin + window.location.pathname);
@@ -76,6 +80,16 @@ export default function EnquiryForm({ heading, subheading }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Phone is optional, but if given it must match the country's expected length.
+    if (phoneNumber && (phoneNumber.length < country.min || phoneNumber.length > country.max)) {
+      setPhoneError(
+        country.min === country.max
+          ? `Please enter a ${country.min}-digit ${country.name} number.`
+          : `Please enter a ${country.min}–${country.max} digit ${country.name} number.`
+      );
+      return;
+    }
+    setPhoneError("");
     setStatus("loading");
     setError(false);
     const form = e.target;
@@ -154,7 +168,14 @@ export default function EnquiryForm({ heading, subheading }) {
               <select
                 className="rsvp-input !w-[92px] shrink-0 cursor-pointer"
                 value={dialCode}
-                onChange={(e) => setDialCode(e.target.value)}
+                onChange={(e) => {
+                  const code = e.target.value;
+                  setDialCode(code);
+                  // Truncate any already-typed number to the new country's max
+                  const c = DIAL_CODES.find((x) => x.code === code) || DIAL_CODES[0];
+                  setPhoneNumber((n) => n.slice(0, c.max));
+                  if (phoneError) setPhoneError("");
+                }}
                 aria-label="Country dial code"
                 autoComplete="tel-country-code"
               >
@@ -168,11 +189,16 @@ export default function EnquiryForm({ heading, subheading }) {
                 id="lp-phone"
                 inputMode="numeric"
                 autoComplete="tel-national"
+                maxLength={country.max}
                 placeholder="Phone number"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => { setPhoneNumber(e.target.value.replace(/\D/g, "")); if (phoneError) setPhoneError(""); }}
+                aria-invalid={phoneError ? "true" : undefined}
               />
             </div>
+            {phoneError && (
+              <p role="alert" className="text-[10.5px] text-[#9B3324] font-light mt-1">{phoneError}</p>
+            )}
           </div>
 
           <div className="rsvp-field">

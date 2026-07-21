@@ -196,8 +196,10 @@ export async function POST(req) {
     return Response.json({ error: "A valid email address is required." }, { status: 400 });
   if (firstName.trim().length > 50 || lastName.trim().length > 50)
     return Response.json({ error: "Name must be under 50 characters." }, { status: 400 });
-  if (message && message.length > 2000)
-    return Response.json({ error: "Message must be under 2000 characters." }, { status: 400 });
+  // Generous ceiling only — long, detailed visions are welcome; this bound just
+  // guards against multi-MB abuse payloads, not real enquiries (~10k chars ≈ 1700 words).
+  if (message && message.length > 10000)
+    return Response.json({ error: "Message is too long." }, { status: 400 });
   if (chatbotContext !== undefined && (typeof chatbotContext !== "object" || Array.isArray(chatbotContext)))
     return Response.json({ error: "Invalid chatbotContext." }, { status: 400 });
 

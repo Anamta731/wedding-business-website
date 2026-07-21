@@ -164,10 +164,10 @@ export const content = {
         description:
           "Say your vows beyond India's borders — Tuscan villas and Lake Como shores, Thai beach resorts, Balinese clifftop pavilions and Emirati palaces. We handle visas and local licences, on-ground vendor sourcing and multi-country guest travel end to end, so a wedding abroad feels every bit as effortless as one at home.",
         venues: [
-          { name: "Anantara", location: "Koh Samui, Thailand", image: "/assets/photos/landing/beach-wedding/grand-hyatt-goa.jpg" },
-          { name: "AYANA Resort", location: "Bali, Indonesia", image: "/assets/photos/landing/beach-wedding/caravela-beachresort.jpg" },
-          { name: "Belmond Villa", location: "Lake Como, Italy", image: "/assets/photos/landing/beach-wedding/taj-cidade-goa.jpg" },
-          { name: "Emirates Palace", location: "Abu Dhabi, UAE", image: "/assets/photos/landing/citiy luxe/ITC-grand-bharat-delhi.jpg" },
+          { name: "Anantara", location: "Koh Samui, Thailand", image: "/assets/photos/landing/international/anantara-koh-samui.jpg" },
+          { name: "AYANA Resort", location: "Bali, Indonesia", image: "/assets/photos/landing/international/ayana-bali.jpg" },
+          { name: "Belmond Villa", location: "Lake Como, Italy", image: "/assets/photos/landing/international/belmond-lake-como.jpg" },
+          { name: "Emirates Palace", location: "Abu Dhabi, UAE", image: "/assets/photos/landing/international/emirates-palace-abu-dhabi.jpg" },
         ],
       },
     ],
