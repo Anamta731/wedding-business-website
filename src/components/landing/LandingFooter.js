@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { trackClient, getSessionId } from "@/lib/clientTelemetry";
 import { LotusFlourish } from "./Ornaments";
 import { WHATSAPP_URL, EMAIL, INSTAGRAM_URL, FACEBOOK_URL, FOOTER_ID } from "./theme";
@@ -131,6 +132,12 @@ export default function LandingFooter() {
               Please enter a valid email address and try again.
             </p>
           )}
+          {status !== "done" && (
+            <p className="text-[10px] leading-[1.6] text-bg/40 font-light mt-3">
+              By subscribing you agree to our{" "}
+              <Link href="/privacy-policy" className="text-gold/90 underline underline-offset-2 hover:text-gold transition-colors">Privacy Policy</Link>.
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] tracking-[0.22em] uppercase">
@@ -139,7 +146,11 @@ export default function LandingFooter() {
           <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">Instagram</a>
           <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">Facebook</a>
         </div>
-        <p className="text-[10px] tracking-widest">© {new Date().getFullYear()} Vows &amp; Vedas. All rights reserved.</p>
+        <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-[10px] tracking-widest">
+          <p>© {new Date().getFullYear()} Vows &amp; Vedas. All rights reserved.</p>
+          <span className="text-bg/25" aria-hidden="true">·</span>
+          <Link href="/privacy-policy" className="uppercase tracking-[0.22em] hover:text-gold transition-colors">Privacy</Link>
+        </div>
       </div>
     </footer>
   );

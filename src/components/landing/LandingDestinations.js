@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { trackClient } from "@/lib/clientTelemetry";
 import { SectionHeading, Reveal } from "./LandingSection";
 import { CornerFrame, MiniFlourish, PhotoFrame, SectionDivider } from "./Ornaments";
@@ -11,7 +12,8 @@ import { scrollToEnquire, WHATSAPP_URL } from "./theme";
 // Place cards: infinitely looping snap-carousel on phones, 2×2 spread on
 // desktop. Tapping a card opens a detail overlay with the destination's
 // story and a few of its venues — no navigation off the landing page.
-export default function LandingDestinations({ eyebrow, title, titleAccent, items, midCta }) {
+export default function LandingDestinations({ eyebrow, title, titleAccent, items, midCta, enquireHref }) {
+  const router = useRouter();
   const railRef = useRef(null);
   const [selected, setSelected] = useState(null);
   // Re-measure trigger: the rail is md:hidden, so if the page first renders at a
@@ -114,11 +116,22 @@ export default function LandingDestinations({ eyebrow, title, titleAccent, items
   }, [items.length, selected, measureTick]);
 
   const handleMidCta = () => {
+    if (enquireHref) {
+      trackClient("CtaClick", { channel: "enquire_page", location: "lp_destinations" });
+      router.push(enquireHref);
+      return;
+    }
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_destinations" });
     scrollToEnquire();
   };
 
   const handleOverlayEnquire = () => {
+    if (enquireHref) {
+      trackClient("CtaClick", { channel: "enquire_page", location: "lp_destination_overlay" });
+      setSelected(null);
+      router.push(enquireHref);
+      return;
+    }
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_destination_overlay" });
     setSelected(null);
     // let the scroll-lock release before scrolling to the card

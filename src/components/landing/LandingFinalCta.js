@@ -1,17 +1,30 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { trackClient } from "@/lib/clientTelemetry";
 import { Reveal } from "./LandingSection";
 import { Blossom, CornerFrame, SectionDivider } from "./Ornaments";
 import { scrollToEnquire, FINAL_CTA_ID } from "./theme";
 
-export default function LandingFinalCta({ eyebrow, title, titleAccent, subtitle, button, secondary }) {
+export default function LandingFinalCta({ eyebrow, title, titleAccent, subtitle, button, secondary, enquireHref }) {
+  const router = useRouter();
+
   const handleCta = () => {
+    if (enquireHref) {
+      trackClient("CtaClick", { channel: "enquire_page", location: "lp_final_cta" });
+      router.push(enquireHref);
+      return;
+    }
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_final_cta" });
     scrollToEnquire();
   };
 
   const handleSecondary = () => {
+    if (enquireHref) {
+      trackClient("CtaClick", { channel: "enquire_page", location: "lp_final_cta_quote" });
+      router.push(enquireHref);
+      return;
+    }
     trackClient("CtaClick", { channel: "enquire_scroll", location: "lp_final_cta_quote" });
     scrollToEnquire();
   };

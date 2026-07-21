@@ -30,11 +30,11 @@ export default function DestinationWeddingsLanding() {
       </LandingHero>
 
       <LandingServices {...content.services} />
-      <LandingDestinations {...content.destinations} />
+      <LandingDestinations {...content.destinations} enquireHref="/lp/destination-weddings/enquire" />
       <LandingTestimonials {...content.testimonials} />
       <LandingGallery {...content.gallery} />
       <LandingFaq {...content.faq} enquireHref="/lp/destination-weddings/enquire" />
-      <LandingFinalCta {...content.finalCta} />
+      <LandingFinalCta {...content.finalCta} enquireHref="/lp/destination-weddings/enquire" />
 
       <LandingFooter />
       <StickyCtaBar enquireHref="/lp/destination-weddings/enquire" />

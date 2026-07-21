@@ -573,6 +573,22 @@ export default function Chatbot() {
             </div>
           </div>
 
+          {/* AI / data disclosure — persistent, visible before first message */}
+          <div className="px-5 py-2 border-b border-[#C9A234]/10 shrink-0 bg-[#1A1408]/40">
+            <p className="text-[9px] leading-[1.5] text-[#9A8F7E]">
+              This assistant uses AI. Conversations may be saved to help us plan your wedding{" "}
+              <span className="text-[#9A8F7E]/60">·</span>{" "}
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#C9A234] hover:opacity-70 transition-opacity underline underline-offset-2"
+              >
+                Privacy
+              </a>
+            </p>
+          </div>
+
           {/* Messages */}
           <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#C9A234]/20">
             {messages.map((msg, i) => {
