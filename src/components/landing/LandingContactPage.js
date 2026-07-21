@@ -229,7 +229,14 @@ export default function LandingContactPage({ backHref }) {
                       <select
                         className="lpc-dial"
                         value={dialCode}
-                        onChange={(e) => { setDialCode(e.target.value); if (phoneError) setPhoneError(""); }}
+                        onChange={(e) => {
+                          const code = e.target.value;
+                          setDialCode(code);
+                          // Truncate any already-typed number to the new country's max
+                          const c = DIAL_CODES.find((x) => x.code === code) || DIAL_CODES[0];
+                          setPhoneNumber((n) => n.slice(0, c.max));
+                          if (phoneError) setPhoneError("");
+                        }}
                         aria-label="Country dial code"
                         autoComplete="tel-country-code"
                       >
