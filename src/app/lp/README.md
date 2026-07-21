@@ -10,9 +10,16 @@ An error here shows a fallback on this page only ([error.js](error.js)).
 
 ## Change a photo
 
-1. Drop the new image into `public/assets/photos/landing/` (or reuse an existing site photo).
+1. Drop the new image into `public/assets/photos/landing/`.
 2. Open the variant's `content.js` and update the path on the line you want.
 3. Run `npm run compress-images` before committing.
+
+**All landing photos live under `public/assets/photos/landing/` — keep it that
+way.** Every image the landing pages use has its own copy in this folder, so
+the landing pages never depend on the main site's photos. Do **not** point a
+landing page at a main-site folder (e.g. `/assets/photos/destination/…`): a
+future main-site change could delete or rename that file and silently break
+your page. If you want to reuse a site photo, copy it into `landing/` first.
 
 ## Change any text, testimonial, or service
 
