@@ -50,11 +50,14 @@ Empty dead route `src/app/privacy/` (no `page.js`) was removed; the canonical UR
    opt-in, and no unsubscribe link in the notification email. **Policy §2(d) and §7 promise
    unsubscribe "using the link in any newsletter email."** This must be built (or the copy softened)
    before the policy is truly accurate. Not fabricated here.
-2. **Stale policy file in repo.** `vows-and-vedas-privacy-policy.md` (+ `.docx`) is an **older,
-   different** policy — "Last Updated: 22 June 2026", **GDPR**-based (UK/EU/ICO), 13 sections, no
-   mention of the AI/Microsoft handling, chat storage, newsletter, account registration, DPDP Act, or
-   Grievance Officer. The published page uses the **approved DPDP FINAL text** from the handover, not
-   this file. Recommend removing/reconciling the stale file to avoid confusion.
+2. **Stale local policy draft (never committed).** An **untracked** `vows-and-vedas-privacy-policy.md`
+   (+ `.docx`) was present in the working directory — an **older, different** policy ("Last Updated:
+   22 June 2026", **GDPR**-based UK/EU/ICO, 13 sections, no mention of the AI/Microsoft handling, chat
+   storage, newsletter, account registration, DPDP Act, or Grievance Officer). It was **never tracked
+   in git** — it existed only locally, so it is not in the repo, the diff, or history. The published
+   page uses the **approved DPDP FINAL text** from the handover, not that draft. The local untracked
+   copy was deleted; **git history is unaffected** (nothing was removed from the repo). Noted only so
+   nobody mistakes that older draft for the source of truth if a copy resurfaces.
 3. **Dead newsletter input on the main site.** `Footer.js` has a "Stay Connected" email input with
    **no handler** — it collects/submits nothing. Left untouched (adding consent copy to a
    non-submitting field would mislead). Either wire it to `/api/newsletter-notify` (then it needs the
@@ -65,6 +68,11 @@ Empty dead route `src/app/privacy/` (no `page.js`) was removed; the canonical UR
 5. **GTM ↔ policy §10 wording.** Policy §10 names Google/GTM advertising cookies. Before activating,
    confirm the actual GTM tag inventory (GA4 / Google Ads / **Meta**?). If a Meta/Facebook pixel is
    present, §10 needs "and Meta" added.
+6. **Pre-existing consent-first gap in `PageTracker.js`.** It writes `sessionStorage`
+   (`cta_source_path`, `vv_entry_done`) unconditionally on load, before any banner choice. Not
+   introduced by this PR and it doesn't undermine the `trackClient` analytics gate (no telemetry is
+   sent), but it's a residual gap in the strict "consent-first" framing — worth a separate look if you
+   want first-party storage fully gated too.
 
 ## Deploy checklist (operator — NOT this session)
 1. Review + merge PR → SWA deploy.

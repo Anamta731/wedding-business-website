@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { trackClient, getSessionId } from "@/lib/clientTelemetry";
 import { LotusFlourish } from "./Ornaments";
 import { WHATSAPP_URL, EMAIL, INSTAGRAM_URL, FACEBOOK_URL, FOOTER_ID } from "./theme";
@@ -134,7 +135,7 @@ export default function LandingFooter() {
           {status !== "done" && (
             <p className="text-[10px] leading-[1.6] text-bg/40 font-light mt-3">
               By subscribing you agree to our{" "}
-              <a href="/privacy-policy" className="text-gold/90 underline underline-offset-2 hover:text-gold transition-colors">Privacy Policy</a>.
+              <Link href="/privacy-policy" className="text-gold/90 underline underline-offset-2 hover:text-gold transition-colors">Privacy Policy</Link>.
             </p>
           )}
         </div>
@@ -148,7 +149,7 @@ export default function LandingFooter() {
         <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-[10px] tracking-widest">
           <p>© {new Date().getFullYear()} Vows &amp; Vedas. All rights reserved.</p>
           <span className="text-bg/25" aria-hidden="true">·</span>
-          <a href="/privacy-policy" className="uppercase tracking-[0.22em] hover:text-gold transition-colors">Privacy</a>
+          <Link href="/privacy-policy" className="uppercase tracking-[0.22em] hover:text-gold transition-colors">Privacy</Link>
         </div>
       </div>
     </footer>
