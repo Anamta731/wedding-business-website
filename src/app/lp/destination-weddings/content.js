@@ -284,6 +284,5 @@ export const content = {
     subtitle:
       "Tell us your vibe, your guest count, your season — and we'll curate the perfect destination for your story.",
     button: "Get Free Wedding Consultation",
-    secondary: "Get Wedding Quote",
   },
 };
