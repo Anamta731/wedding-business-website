@@ -44,7 +44,7 @@ const MONTHS = [
 // contact page, rebuilt inside the landing kit: split layout, underline
 // fields with the gold focus bar, the framed quote over photography, and
 // direct WhatsApp/email options. Attribution stays on the landing variant.
-export default function LandingContactPage({ backHref }) {
+export default function LandingContactPage({ backHref, thankYouHref = "/thank-you" }) {
   const router = useRouter();
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState(false);
@@ -153,7 +153,7 @@ export default function LandingContactPage({ backHref }) {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/thank-you");
+        router.push(thankYouHref);
       } else {
         throw new Error(data.error || "Failed to send");
       }

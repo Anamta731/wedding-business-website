@@ -26,7 +26,7 @@ const DIAL_CODES = [
 // The RSVP card — the landing page's signature element and its entire goal.
 // Posts to the same /api/contact pipeline as the main site's contact page,
 // tagged with this landing page's own path so every lead is attributable.
-export default function EnquiryForm({ heading, subheading }) {
+export default function EnquiryForm({ heading, subheading, thankYouHref = "/thank-you" }) {
   const router = useRouter();
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState(false);
@@ -120,7 +120,7 @@ export default function EnquiryForm({ heading, subheading }) {
       });
       const data = await res.json();
       if (data.success) {
-        router.push("/thank-you");
+        router.push(thankYouHref);
       } else {
         throw new Error(data.error || "Failed to send");
       }
