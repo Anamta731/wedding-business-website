@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto";
-import { after } from "next/server";
 import { EmailClient } from "@azure/communication-email";
 import { DefaultAzureCredential } from "@azure/identity";
 import { trackEvent } from "@/lib/telemetry";
@@ -300,12 +299,10 @@ export async function POST(req) {
       },
     };
 
-    // ── Capture the lead durably BEFORE responding ──────────────────────────
-    // The ACS email sends are slow: each beginSend + pollUntilDone polls the
-    // service to terminal status (several seconds), and there are two of them.
-    // We no longer make the visitor wait on that. Instead we persist the enquiry
-    // to Cosmos first — a fast point-write — so the lead is guaranteed captured,
-    // then deliver the emails after the response is flushed (see `after` below).
+    // ── Capture the lead durably BEFORE emailing ────────────────────────────
+    // We persist the enquiry to Cosmos first — a fast point-write — so the lead
+    // is guaranteed captured even if email delivery later fails. The emails are
+    // then QUEUED (not polled to completion) within this request; see below.
     const session = await getSession();
     const enquiryId = randomUUID();
     const enquiryPartition = session?.sub ?? "anonymous"; // container pk is /userId
@@ -337,17 +334,15 @@ export async function POST(req) {
       console.error("Enquiry DB save FAILED:", dbErr);
     }
 
-    // Send one ACS email to terminal status; throws on non-success.
-    const sendEmail = async (message) => {
-      const poller = await client.beginSend(message);
-      const result = await poller.pollUntilDone();
-      if (result.status !== "Succeeded") {
-        throw new Error(`Email send failed with status: ${result.status}`);
-      }
-    };
+    // Hand an email to ACS and return as soon as it's accepted. We deliberately
+    // do NOT pollUntilDone(): polling for terminal *delivery* status was the
+    // multi-second cost, and "ACS accepted the send" is a sufficient guarantee
+    // here (equivalent to handing a letter to the post office). beginSend still
+    // throws on auth/validation failures, which is what we want to surface.
+    const queueEmail = (message) => client.beginSend(message);
 
-    // Record on the saved enquiry that a background email never went out, so a
-    // silent delivery failure leaves a durable, actionable trail (not just a log).
+    // Record on the saved enquiry that an email never went out, so a failed
+    // send leaves a durable, actionable trail on the row (not just a log line).
     const flagEmailFailure = async (field, reason) => {
       if (!dbSaved) return;
       try {
@@ -359,7 +354,7 @@ export async function POST(req) {
       }
     };
 
-    // Telemetry — deferred with the emails so it never blocks the response.
+    // Telemetry — fired without awaiting so it never blocks the response.
     const fireTelemetry = () => trackEvent("EnquirySubmitted", {
       sourcePagePath:     sourcePagePath || "",
       referrerUrl:        referrerUrl    || "",
@@ -426,48 +421,43 @@ export async function POST(req) {
         },
       };
 
-    // ── Deliver emails AFTER the response is flushed ────────────────────────
-    // `after` (next/server) keeps the invocation alive post-response on Node /
-    // Docker deploys, so these slow sends run in the background instead of on the
-    // visitor's clock. Each failure is logged AND flagged on the saved enquiry.
-    const deliver = async () => {
-      try {
-        await sendEmail(emailMessage);
-      } catch (notifyErr) {
-        console.error("Notification email failed:", notifyErr);
-        await flagEmailFailure("notificationEmailFailed", notifyErr.message);
+    // ── Queue both emails within the request (no post-response work) ─────────
+    // Azure Static Web Apps runs API routes as Azure Functions, which can freeze
+    // the instance the moment the response is flushed — so `after()`/background
+    // delivery is NOT reliable here (emails would silently never send). Instead
+    // we queue both emails in-request. Since we no longer poll for delivery, the
+    // hand-off is quick, and we run the two sends in parallel.
+    if (dbSaved) {
+      // Lead is already safe in Cosmos, so a queue failure must not fail the
+      // request — just log it and leave a durable flag on the saved row.
+      const [notifyRes, confirmRes] = await Promise.allSettled([
+        queueEmail(emailMessage),
+        confirmationMessage ? queueEmail(confirmationMessage) : Promise.resolve(),
+      ]);
+      if (notifyRes.status === "rejected") {
+        console.error("Notification email failed:", notifyRes.reason);
+        await flagEmailFailure("notificationEmailFailed", notifyRes.reason?.message);
       }
-      if (confirmationMessage) {
-        try {
-          await sendEmail(confirmationMessage);
-        } catch (confirmErr) {
-          console.error("Confirmation email failed:", confirmErr);
-          await flagEmailFailure("confirmationEmailFailed", confirmErr.message);
-        }
+      if (confirmRes.status === "rejected") {
+        console.error("Confirmation email failed:", confirmRes.reason);
+        await flagEmailFailure("confirmationEmailFailed", confirmRes.reason?.message);
       }
       fireTelemetry();
-    };
-
-    if (dbSaved) {
-      // Lead is safe in the DB — respond instantly, deliver in the background.
-      after(deliver);
       return Response.json({ success: true });
     }
 
-    // DB save failed → email is the only remaining capture channel. Block on the
+    // DB save failed → email is the only remaining capture channel. Await the
     // team notification so the lead isn't lost; a failure here becomes a 500 and
-    // the visitor is asked to retry. Confirmation + telemetry still run after.
-    await sendEmail(emailMessage);
-    after(async () => {
-      if (confirmationMessage) {
-        try {
-          await sendEmail(confirmationMessage);
-        } catch (confirmErr) {
-          console.error("Confirmation email failed:", confirmErr);
-        }
+    // the visitor is asked to retry. Confirmation is best-effort.
+    await queueEmail(emailMessage);
+    if (confirmationMessage) {
+      try {
+        await queueEmail(confirmationMessage);
+      } catch (confirmErr) {
+        console.error("Confirmation email failed:", confirmErr);
       }
-      fireTelemetry();
-    });
+    }
+    fireTelemetry();
     return Response.json({ success: true, degraded: true });
   } catch (err) {
     console.error("Contact form error:", err);
