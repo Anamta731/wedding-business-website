@@ -113,8 +113,12 @@ export default function LandingContactPage({ backHref, thankYouHref = "/thank-yo
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Phone is optional, but if given it must match the country's expected length.
-    if (phoneNumber && (phoneNumber.length < country.min || phoneNumber.length > country.max)) {
+    // Phone is required, and must match the country's expected length.
+    if (!phoneNumber) {
+      setPhoneError("Please enter your phone number.");
+      return;
+    }
+    if (phoneNumber.length < country.min || phoneNumber.length > country.max) {
       setPhoneError(
         country.min === country.max
           ? `Please enter a ${country.min}-digit ${country.name} number.`
@@ -250,6 +254,7 @@ export default function LandingContactPage({ backHref, thankYouHref = "/thank-yo
                         id="lpc-phone"
                         inputMode="numeric"
                         autoComplete="tel-national"
+                        aria-required="true"
                         maxLength={country.max}
                         value={phoneNumber}
                         onChange={(e) => { setPhoneNumber(e.target.value.replace(/\D/g, "")); if (phoneError) setPhoneError(""); }}
