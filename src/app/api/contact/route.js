@@ -299,33 +299,84 @@ export async function POST(req) {
       },
     };
 
-    const poller = await client.beginSend(emailMessage);
-    const result = await poller.pollUntilDone();
+    // ── Capture the lead durably BEFORE emailing ────────────────────────────
+    // We persist the enquiry to Cosmos first — a fast point-write — so the lead
+    // is guaranteed captured even if email delivery later fails. The emails are
+    // then QUEUED (not polled to completion) within this request; see below.
+    const session = await getSession();
+    const enquiryId = randomUUID();
+    const enquiryPartition = session?.sub ?? "anonymous"; // container pk is /userId
+    const enquiryDoc = {
+      id: enquiryId,
+      userId: enquiryPartition,
+      email: email.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone ?? "",
+      destination: destination ?? "",
+      weddingDate: weddingDate ?? "",
+      message: message ?? "",
+      sourcePagePath: sourcePagePath ?? "",
+      flaggedSpam: isFlagged,
+      spamReasons,
+      submittedAt: new Date().toISOString(),
+      // Phase 0: link enquiry ↔ chatbot conversation (camelCase sessionId, D-030).
+      sessionId: sessionId || chatbotContext?.session_id || null,
+    };
 
-    if (result.status !== "Succeeded") {
-      throw new Error(`Email send failed with status: ${result.status}`);
+    let dbSaved = false;
+    try {
+      await getEnquiriesContainer().items.create(enquiryDoc);
+      dbSaved = true;
+    } catch (dbErr) {
+      // DB is the primary safety net. If it fails we fall back to a blocking
+      // notification-email send (below) so the lead is still captured somewhere.
+      // This path also removes the durable trail: with no row, a subsequent
+      // silent email non-delivery would lose the lead entirely — so emit a
+      // telemetry event we can alert on, since this should be rare and must not
+      // stay invisible.
+      console.error("Enquiry DB save FAILED:", dbErr);
+      trackEvent("EnquiryDbSaveFailed", {
+        error:          dbErr?.message || String(dbErr),
+        sourcePagePath: sourcePagePath || "",
+        isFlagged,
+      });
     }
 
-    // Fire-and-forget: save enquiry to DB if user is logged in
-    getSession().then((session) => {
-      if (!session) return;
-      return getEnquiriesContainer().items.create({
-        id: randomUUID(),
-        userId: session.sub,
-        email: email.trim(),
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        destination: destination ?? "",
-        weddingDate: weddingDate ?? "",
-        message: message ?? "",
-        submittedAt: new Date().toISOString(),
-        // Phase 0: link enquiry ↔ chatbot conversation (camelCase sessionId, D-030).
-        sessionId: sessionId || chatbotContext?.session_id || null,
-      });
-    }).catch((err) => console.error("Enquiry DB save error:", err));
+    // Hand an email to ACS and return as soon as it's accepted. We deliberately
+    // do NOT pollUntilDone(): polling for terminal *delivery* status was the
+    // multi-second cost, and "ACS accepted the send" is a sufficient guarantee
+    // here (equivalent to handing a letter to the post office). beginSend still
+    // throws on auth/validation failures, which is what we want to surface.
+    //
+    // KNOWN TRADE-OFF: because we no longer poll terminal status, only failures
+    // beginSend throws SYNCHRONOUSLY (auth/malformed request) are detected and
+    // flagged below. Post-acceptance delivery failures (bounce, rejected
+    // recipient, throttling) are NOT detected here. This is acceptable ONLY on
+    // the normal path, where the lead is persisted to Cosmos first and so is
+    // never lost — at worst the team is un-notified while the row survives.
+    // The exception is the DB-save-failed fallback below: there is no row, so a
+    // silent non-delivery there loses the lead outright — hence the
+    // EnquiryDbSaveFailed telemetry above, so that (rare) case is alertable.
+    // Close the gap properly later with an ACS delivery-report webhook or a
+    // scheduled reconciliation if silent non-delivery ever becomes a problem.
+    const queueEmail = (emailMsg) => client.beginSend(emailMsg);
 
-    // Fire-and-forget telemetry — never awaited so it can't block the response
-    trackEvent("EnquirySubmitted", {
+    // Record on the saved enquiry that an email never went out, so a failed
+    // send leaves a durable, actionable trail on the row (not just a log line).
+    const flagEmailFailure = async (field, reason) => {
+      if (!dbSaved) return;
+      try {
+        await getEnquiriesContainer()
+          .item(enquiryId, enquiryPartition)
+          .patch([{ op: "add", path: `/${field}`, value: reason || true }]);
+      } catch (patchErr) {
+        console.error(`Could not flag ${field} on enquiry ${enquiryId}:`, patchErr);
+      }
+    };
+
+    // Telemetry — fired without awaiting so it never blocks the response.
+    const fireTelemetry = () => trackEvent("EnquirySubmitted", {
       sourcePagePath:     sourcePagePath || "",
       referrerUrl:        referrerUrl    || "",
       destination:        destination    || "",
@@ -347,9 +398,7 @@ export async function POST(req) {
     // auto-replying to it would make us a spam relay (backscatter). The team is
     // still notified above, so a mis-flagged real lead is never dropped — they'll
     // simply get a personal reply instead of the instant auto-confirmation.
-    let confirmationError = null;
-    if (!isFlagged) try {
-      const confirmationMessage = {
+    const confirmationMessage = isFlagged ? null : {
         senderAddress: process.env.AZURE_SENDER_ADDRESS,
         replyTo: [{ address: "info@vowsandvedas.com", displayName: "Vows & Vedas" }],
         content: {
@@ -392,16 +441,53 @@ export async function POST(req) {
           to: [{ address: email.trim(), displayName: `${firstName} ${lastName}` }],
         },
       };
-      const confirmPoller = await client.beginSend(confirmationMessage);
-      const confirmResult = await confirmPoller.pollUntilDone();
-      if (confirmResult.status !== "Succeeded") {
-        confirmationError = `Confirmation send status: ${confirmResult.status}`;
+
+    // ── Queue both emails within the request (no post-response work) ─────────
+    // Azure Static Web Apps runs API routes as Azure Functions, which can freeze
+    // the instance the moment the response is flushed — so `after()`/background
+    // delivery is NOT reliable here (emails would silently never send). Instead
+    // we queue both emails in-request. Since we no longer poll for delivery, the
+    // hand-off is quick, and we run the two sends in parallel.
+    if (dbSaved) {
+      // Lead is already safe in Cosmos, so a queue failure must not fail the
+      // request — just log it and leave a durable flag on the saved row.
+      const [notifyRes, confirmRes] = await Promise.allSettled([
+        queueEmail(emailMessage),
+        confirmationMessage ? queueEmail(confirmationMessage) : Promise.resolve(),
+      ]);
+      if (notifyRes.status === "rejected") {
+        console.error("Notification email failed:", notifyRes.reason);
+        await flagEmailFailure("notificationEmailFailed", notifyRes.reason?.message);
       }
-    } catch (confirmErr) {
-      confirmationError = confirmErr.message;
+      if (confirmRes.status === "rejected") {
+        console.error("Confirmation email failed:", confirmRes.reason);
+        await flagEmailFailure("confirmationEmailFailed", confirmRes.reason?.message);
+      }
+      fireTelemetry();
+      return Response.json({ success: true });
     }
 
-    return Response.json({ success: true, confirmationError });
+    // DB save failed → email is the only remaining capture channel, and there is
+    // no saved row to flag. So here — and ONLY here — we poll the team
+    // notification to terminal delivery status: if it doesn't actually deliver we
+    // throw, which becomes a 500 and asks the visitor to retry, rather than
+    // silently losing a lead that has no DB row and no other trail. This
+    // reintroduces polling latency exclusively on the rare Cosmos-outage path;
+    // the hot (DB-saved) path above stays accept-only and fast.
+    const fallbackPoller = await client.beginSend(emailMessage);
+    const fallbackResult = await fallbackPoller.pollUntilDone();
+    if (fallbackResult.status !== "Succeeded") {
+      throw new Error(`Fallback notification delivery failed: ${fallbackResult.status}`);
+    }
+    if (confirmationMessage) {
+      try {
+        await queueEmail(confirmationMessage);
+      } catch (confirmErr) {
+        console.error("Confirmation email failed:", confirmErr);
+      }
+    }
+    fireTelemetry();
+    return Response.json({ success: true, degraded: true });
   } catch (err) {
     console.error("Contact form error:", err);
     return Response.json({ success: false, error: err.message }, { status: 500 });
