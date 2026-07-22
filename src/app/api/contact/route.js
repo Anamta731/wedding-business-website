@@ -331,7 +331,16 @@ export async function POST(req) {
     } catch (dbErr) {
       // DB is the primary safety net. If it fails we fall back to a blocking
       // notification-email send (below) so the lead is still captured somewhere.
+      // This path also removes the durable trail: with no row, a subsequent
+      // silent email non-delivery would lose the lead entirely — so emit a
+      // telemetry event we can alert on, since this should be rare and must not
+      // stay invisible.
       console.error("Enquiry DB save FAILED:", dbErr);
+      trackEvent("EnquiryDbSaveFailed", {
+        error:          dbErr?.message || String(dbErr),
+        sourcePagePath: sourcePagePath || "",
+        isFlagged,
+      });
     }
 
     // Hand an email to ACS and return as soon as it's accepted. We deliberately
@@ -343,10 +352,14 @@ export async function POST(req) {
     // KNOWN TRADE-OFF: because we no longer poll terminal status, only failures
     // beginSend throws SYNCHRONOUSLY (auth/malformed request) are detected and
     // flagged below. Post-acceptance delivery failures (bounce, rejected
-    // recipient, throttling) are NOT detected here. Accepted because the lead is
-    // always persisted to Cosmos first, so it is never lost — at worst the team
-    // is un-notified. Close this gap later with an ACS delivery-report webhook or
-    // a scheduled reconciliation if silent non-delivery ever becomes a problem.
+    // recipient, throttling) are NOT detected here. This is acceptable ONLY on
+    // the normal path, where the lead is persisted to Cosmos first and so is
+    // never lost — at worst the team is un-notified while the row survives.
+    // The exception is the DB-save-failed fallback below: there is no row, so a
+    // silent non-delivery there loses the lead outright — hence the
+    // EnquiryDbSaveFailed telemetry above, so that (rare) case is alertable.
+    // Close the gap properly later with an ACS delivery-report webhook or a
+    // scheduled reconciliation if silent non-delivery ever becomes a problem.
     const queueEmail = (message) => client.beginSend(message);
 
     // Record on the saved enquiry that an email never went out, so a failed
