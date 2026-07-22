@@ -360,7 +360,7 @@ export async function POST(req) {
     // EnquiryDbSaveFailed telemetry above, so that (rare) case is alertable.
     // Close the gap properly later with an ACS delivery-report webhook or a
     // scheduled reconciliation if silent non-delivery ever becomes a problem.
-    const queueEmail = (message) => client.beginSend(message);
+    const queueEmail = (emailMsg) => client.beginSend(emailMsg);
 
     // Record on the saved enquiry that an email never went out, so a failed
     // send leaves a durable, actionable trail on the row (not just a log line).
