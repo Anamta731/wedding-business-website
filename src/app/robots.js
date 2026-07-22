@@ -3,7 +3,7 @@ export default function robots() {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/thank-you"],
+      disallow: ["/api/", "/thank-you", "/lp/"],
     },
     sitemap: "https://vowsandvedas.com/sitemap.xml",
   };

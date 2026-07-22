@@ -26,7 +26,7 @@ export default function DestinationWeddingsLanding() {
       <LandingHeader enquireHref="/lp/destination-weddings/enquire" />
 
       <LandingHero {...content.hero}>
-        <EnquiryForm {...content.enquiry} />
+        <EnquiryForm {...content.enquiry} thankYouHref="/lp/destination-weddings/thank-you" />
       </LandingHero>
 
       <LandingServices {...content.services} />

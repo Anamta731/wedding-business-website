@@ -8,5 +8,5 @@ export const metadata = {
 };
 
 export default function DestinationWeddingsEnquire() {
-  return <LandingContactPage backHref="/lp/destination-weddings" />;
+  return <LandingContactPage backHref="/lp/destination-weddings" thankYouHref="/lp/destination-weddings/thank-you" />;
 }
