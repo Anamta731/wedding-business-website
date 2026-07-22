@@ -339,6 +339,14 @@ export async function POST(req) {
     // multi-second cost, and "ACS accepted the send" is a sufficient guarantee
     // here (equivalent to handing a letter to the post office). beginSend still
     // throws on auth/validation failures, which is what we want to surface.
+    //
+    // KNOWN TRADE-OFF: because we no longer poll terminal status, only failures
+    // beginSend throws SYNCHRONOUSLY (auth/malformed request) are detected and
+    // flagged below. Post-acceptance delivery failures (bounce, rejected
+    // recipient, throttling) are NOT detected here. Accepted because the lead is
+    // always persisted to Cosmos first, so it is never lost — at worst the team
+    // is un-notified. Close this gap later with an ACS delivery-report webhook or
+    // a scheduled reconciliation if silent non-delivery ever becomes a problem.
     const queueEmail = (message) => client.beginSend(message);
 
     // Record on the saved enquiry that an email never went out, so a failed
