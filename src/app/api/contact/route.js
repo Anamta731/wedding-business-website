@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { after } from "next/server";
 import { EmailClient } from "@azure/communication-email";
 import { DefaultAzureCredential } from "@azure/identity";
 import { trackEvent } from "@/lib/telemetry";
@@ -299,33 +300,67 @@ export async function POST(req) {
       },
     };
 
-    const poller = await client.beginSend(emailMessage);
-    const result = await poller.pollUntilDone();
+    // ── Capture the lead durably BEFORE responding ──────────────────────────
+    // The ACS email sends are slow: each beginSend + pollUntilDone polls the
+    // service to terminal status (several seconds), and there are two of them.
+    // We no longer make the visitor wait on that. Instead we persist the enquiry
+    // to Cosmos first — a fast point-write — so the lead is guaranteed captured,
+    // then deliver the emails after the response is flushed (see `after` below).
+    const session = await getSession();
+    const enquiryId = randomUUID();
+    const enquiryPartition = session?.sub ?? "anonymous"; // container pk is /userId
+    const enquiryDoc = {
+      id: enquiryId,
+      userId: enquiryPartition,
+      email: email.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone ?? "",
+      destination: destination ?? "",
+      weddingDate: weddingDate ?? "",
+      message: message ?? "",
+      sourcePagePath: sourcePagePath ?? "",
+      flaggedSpam: isFlagged,
+      spamReasons,
+      submittedAt: new Date().toISOString(),
+      // Phase 0: link enquiry ↔ chatbot conversation (camelCase sessionId, D-030).
+      sessionId: sessionId || chatbotContext?.session_id || null,
+    };
 
-    if (result.status !== "Succeeded") {
-      throw new Error(`Email send failed with status: ${result.status}`);
+    let dbSaved = false;
+    try {
+      await getEnquiriesContainer().items.create(enquiryDoc);
+      dbSaved = true;
+    } catch (dbErr) {
+      // DB is the primary safety net. If it fails we fall back to a blocking
+      // notification-email send (below) so the lead is still captured somewhere.
+      console.error("Enquiry DB save FAILED:", dbErr);
     }
 
-    // Fire-and-forget: save enquiry to DB if user is logged in
-    getSession().then((session) => {
-      if (!session) return;
-      return getEnquiriesContainer().items.create({
-        id: randomUUID(),
-        userId: session.sub,
-        email: email.trim(),
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        destination: destination ?? "",
-        weddingDate: weddingDate ?? "",
-        message: message ?? "",
-        submittedAt: new Date().toISOString(),
-        // Phase 0: link enquiry ↔ chatbot conversation (camelCase sessionId, D-030).
-        sessionId: sessionId || chatbotContext?.session_id || null,
-      });
-    }).catch((err) => console.error("Enquiry DB save error:", err));
+    // Send one ACS email to terminal status; throws on non-success.
+    const sendEmail = async (message) => {
+      const poller = await client.beginSend(message);
+      const result = await poller.pollUntilDone();
+      if (result.status !== "Succeeded") {
+        throw new Error(`Email send failed with status: ${result.status}`);
+      }
+    };
 
-    // Fire-and-forget telemetry — never awaited so it can't block the response
-    trackEvent("EnquirySubmitted", {
+    // Record on the saved enquiry that a background email never went out, so a
+    // silent delivery failure leaves a durable, actionable trail (not just a log).
+    const flagEmailFailure = async (field, reason) => {
+      if (!dbSaved) return;
+      try {
+        await getEnquiriesContainer()
+          .item(enquiryId, enquiryPartition)
+          .patch([{ op: "add", path: `/${field}`, value: reason || true }]);
+      } catch (patchErr) {
+        console.error(`Could not flag ${field} on enquiry ${enquiryId}:`, patchErr);
+      }
+    };
+
+    // Telemetry — deferred with the emails so it never blocks the response.
+    const fireTelemetry = () => trackEvent("EnquirySubmitted", {
       sourcePagePath:     sourcePagePath || "",
       referrerUrl:        referrerUrl    || "",
       destination:        destination    || "",
@@ -347,9 +382,7 @@ export async function POST(req) {
     // auto-replying to it would make us a spam relay (backscatter). The team is
     // still notified above, so a mis-flagged real lead is never dropped — they'll
     // simply get a personal reply instead of the instant auto-confirmation.
-    let confirmationError = null;
-    if (!isFlagged) try {
-      const confirmationMessage = {
+    const confirmationMessage = isFlagged ? null : {
         senderAddress: process.env.AZURE_SENDER_ADDRESS,
         replyTo: [{ address: "info@vowsandvedas.com", displayName: "Vows & Vedas" }],
         content: {
@@ -392,16 +425,50 @@ export async function POST(req) {
           to: [{ address: email.trim(), displayName: `${firstName} ${lastName}` }],
         },
       };
-      const confirmPoller = await client.beginSend(confirmationMessage);
-      const confirmResult = await confirmPoller.pollUntilDone();
-      if (confirmResult.status !== "Succeeded") {
-        confirmationError = `Confirmation send status: ${confirmResult.status}`;
+
+    // ── Deliver emails AFTER the response is flushed ────────────────────────
+    // `after` (next/server) keeps the invocation alive post-response on Node /
+    // Docker deploys, so these slow sends run in the background instead of on the
+    // visitor's clock. Each failure is logged AND flagged on the saved enquiry.
+    const deliver = async () => {
+      try {
+        await sendEmail(emailMessage);
+      } catch (notifyErr) {
+        console.error("Notification email failed:", notifyErr);
+        await flagEmailFailure("notificationEmailFailed", notifyErr.message);
       }
-    } catch (confirmErr) {
-      confirmationError = confirmErr.message;
+      if (confirmationMessage) {
+        try {
+          await sendEmail(confirmationMessage);
+        } catch (confirmErr) {
+          console.error("Confirmation email failed:", confirmErr);
+          await flagEmailFailure("confirmationEmailFailed", confirmErr.message);
+        }
+      }
+      fireTelemetry();
+    };
+
+    if (dbSaved) {
+      // Lead is safe in the DB — respond instantly, deliver in the background.
+      after(deliver);
+      return Response.json({ success: true });
     }
 
-    return Response.json({ success: true, confirmationError });
+    // DB save failed → email is the only remaining capture channel. Block on the
+    // team notification so the lead isn't lost; a failure here becomes a 500 and
+    // the visitor is asked to retry. Confirmation + telemetry still run after.
+    await sendEmail(emailMessage);
+    after(async () => {
+      if (confirmationMessage) {
+        try {
+          await sendEmail(confirmationMessage);
+        } catch (confirmErr) {
+          console.error("Confirmation email failed:", confirmErr);
+        }
+      }
+      fireTelemetry();
+    });
+    return Response.json({ success: true, degraded: true });
   } catch (err) {
     console.error("Contact form error:", err);
     return Response.json({ success: false, error: err.message }, { status: 500 });
