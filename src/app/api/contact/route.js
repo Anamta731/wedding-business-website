@@ -467,10 +467,18 @@ export async function POST(req) {
       return Response.json({ success: true });
     }
 
-    // DB save failed → email is the only remaining capture channel. Await the
-    // team notification so the lead isn't lost; a failure here becomes a 500 and
-    // the visitor is asked to retry. Confirmation is best-effort.
-    await queueEmail(emailMessage);
+    // DB save failed → email is the only remaining capture channel, and there is
+    // no saved row to flag. So here — and ONLY here — we poll the team
+    // notification to terminal delivery status: if it doesn't actually deliver we
+    // throw, which becomes a 500 and asks the visitor to retry, rather than
+    // silently losing a lead that has no DB row and no other trail. This
+    // reintroduces polling latency exclusively on the rare Cosmos-outage path;
+    // the hot (DB-saved) path above stays accept-only and fast.
+    const fallbackPoller = await client.beginSend(emailMessage);
+    const fallbackResult = await fallbackPoller.pollUntilDone();
+    if (fallbackResult.status !== "Succeeded") {
+      throw new Error(`Fallback notification delivery failed: ${fallbackResult.status}`);
+    }
     if (confirmationMessage) {
       try {
         await queueEmail(confirmationMessage);
