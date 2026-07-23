@@ -403,11 +403,13 @@ export async function POST(request) {
   }
 
   // Phase 0 persistence context. userId read here (request-scoped cookie; local JWT verify, no
-  // network → no meaningful latency). All persistence is fire-and-forget AFTER the response closes.
+  // network → no meaningful latency). Persistence is AWAITED before controller.close() so the Azure
+  // SWA serverless invocation stays alive until the Cosmos write lands (D-035 — post-close writes were
+  // frozen and never persisted). Still best-effort and never-throws, so it stays invisible to the user.
   const userId = await getSession().then((s) => s?.sub ?? null).catch(() => null);
 
   /**
-   * Persist one completed turn to `conversations` (fire-and-forget, best-effort).
+   * Persist one completed turn to `conversations` (best-effort; awaited before the stream closes).
    * TODO(B1-DPDP): transcripts contain PII — privacy-policy update is a prod deploy blocker (EDGE-CASES B1).
    * Never throws: persistence must be INVISIBLE to the chatbot user.
    */
@@ -448,8 +450,8 @@ export async function POST(request) {
           push(sseMeta({ stage: "discovery", intent_level: "low", source: "static_faq" }));
           const suggestions = getSuggestions(query, used_chips, accumulated_intent);
           push(sseDone(suggestions));
-          controller.close();
           await persistTurn(staticAnswer, accumulated_intent); // static-FAQ bypass — no new intent computed
+          controller.close();
           return;
         }
 
@@ -541,8 +543,8 @@ export async function POST(request) {
               : "I'm having trouble responding right now. Please try again or tap 'SPEAK TO A PLANNER' below to reach us directly."
           ));
           push(sseDone(getSuggestions(query, used_chips, intent)));
-          controller.close();
           await persistTurn(fullReply, intent); // generation error — persist partial reply if any
+          controller.close();
           return;
         }
 
@@ -562,15 +564,15 @@ export async function POST(request) {
           ? llmChips
           : getSuggestions(query, used_chips, intent);
         push(sseDone(suggestions));
-        controller.close();
         await persistTurn(fullReply.replace(/\[CHIPS:[^\]]*\]/, "").trim(), intent); // normal completion
+        controller.close();
 
       } catch (err) {
         console.error("[chat/route] error:", err);
         push(sseError("Something went wrong. Please try again or tap 'SPEAK TO A PLANNER' below to reach us directly."));
         push(sseDone());
-        controller.close();
         await persistTurn("", accumulated_intent); // hard error — persist at least the user's message
+        controller.close();
       }
     },
   });
