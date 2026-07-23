@@ -319,6 +319,7 @@ export default function Chatbot() {
           accumulated_intent:   accIntent,
           lead_captured:        leadCaptured,
           used_chips:           usedChips,
+          session_id:           sessionIdRef.current,
         }),
       });
 
