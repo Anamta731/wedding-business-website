@@ -43,3 +43,8 @@ next-env.d.ts
 
 *.docx
 output.md
+
+# local-only working artifacts (not part of the app)
+/review-screenshots/
+/.claude/skills/
+/OneDrive_1_6-8-2026/
