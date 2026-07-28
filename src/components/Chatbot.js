@@ -96,7 +96,7 @@ const STARTERS = [
 
 const INITIAL_MESSAGE = {
   role: "bot",
-  text: "Welcome to Vows & Vedas. I'm here to help you explore our destinations, services, and venues. What would you like to know?",
+  text: "Hello — I'm Mira, your wedding concierge at Vows & Vedas. I'm here to help you imagine and plan a celebration that feels entirely your own. Tell me about the wedding you're dreaming of.",
 };
 
 export default function Chatbot() {
@@ -539,7 +539,7 @@ export default function Chatbot() {
             <div className="flex items-center gap-3">
               <span className="w-10 h-10 shrink-0 rounded-full bg-[#1A1408] border border-[#C9A234]/50 overflow-hidden flex items-center justify-center shadow-[0_0_10px_3px_rgba(201,162,52,0.3)]">
                 <img
-                  src="/assets/photos/Gemini_Generated_Image_tkd7dstkd7dstkd7.png"
+                  src="/assets/photos/mira-avatar.png"
                   alt="MIRA"
                   className="w-full h-full object-cover"
                   style={{ transform: "scale(1.45)", transformOrigin: "center 38%" }}
@@ -605,7 +605,7 @@ export default function Chatbot() {
                       showAvatar ? (
                         <span className="w-7 h-7 shrink-0 rounded-full bg-[#1A1408] border border-[#C9A234]/50 overflow-hidden flex items-center justify-center mb-0.5 shadow-[0_0_8px_2px_rgba(201,162,52,0.25)]">
                           <img
-                            src="/assets/photos/Gemini_Generated_Image_tkd7dstkd7dstkd7.png"
+                            src="/assets/photos/mira-avatar.png"
                             alt="MIRA"
                             className="w-full h-full object-cover"
                             style={{ transform: "scale(1.45)", transformOrigin: "center 38%" }}
@@ -898,7 +898,7 @@ export default function Chatbot() {
               ) : (
                 <span className="w-full h-full rounded-full overflow-hidden">
                   <img
-                    src="/assets/photos/Gemini_Generated_Image_tkd7dstkd7dstkd7.png"
+                    src="/assets/photos/mira-avatar.png"
                     alt="MIRA"
                     className="w-full h-full object-cover"
                     style={{ transform: "scale(1.45)", transformOrigin: "center 38%" }}
