@@ -591,7 +591,7 @@ export default function Chatbot() {
           </div>
 
           {/* Messages */}
-          <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[#C9A234]/20">
+          <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 [scrollbar-width:thin] [scrollbar-color:rgba(201,162,52,0.35)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#C9A234]/30 [&::-webkit-scrollbar-thumb:hover]:bg-[#C9A234]/55 [&::-webkit-scrollbar-button]:hidden">
             {messages.map((msg, i) => {
               const isLastBotMsg = msg.role === "bot" &&
                 messages.slice(i + 1).every(m => m.role !== "bot");
