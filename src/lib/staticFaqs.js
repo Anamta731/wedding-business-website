@@ -360,14 +360,14 @@ const FAQ_TABLE = [
   // ── Book / discovery call ────────────────────────────────────────────────────
   [
     /\bdiscovery call\b|\b(book|schedule|arrange).{0,20}(call|consultation|meeting|appointment)\b|\bhow (do i|to|can i) (book|schedule|connect|reach|speak|talk)\b/i,
-    "To book a discovery call with our planning team:\n- **WhatsApp / Call** — +91 96542 77656\n- **Email** — info@vowsandvedas.com\n- **Enquiry form** — tap 'Speak to a Planner' below\n\nOur team usually responds within 24 hours to schedule a time that works for you.",
+    "To book a discovery call with our planning team:\n- **WhatsApp / Call** — +91 96542 77656\n- **Email** — info@vowsandvedas.com\n- **Enquiry form** — tap 'Speak to us' below\n\nOur team usually responds within 24 hours to schedule a time that works for you.",
     "",
   ],
 
   // ── Contact / reach out ──────────────────────────────────────────────────────
   [
     /\b(contact|reach out|speak to|talk to|connect with|get in touch|whatsapp|call us|email us|how to reach)\b/i,
-    "You can reach the Vows & Vedas team directly:\n- **Email** — info@vowsandvedas.com\n- **WhatsApp / Call** — +91 96542 77656\n- **Enquiry form** — tap 'Speak to a Planner' below or visit our contact page\n\nWe usually respond within 24 hours.",
+    "You can reach the Vows & Vedas team directly:\n- **Email** — info@vowsandvedas.com\n- **WhatsApp / Call** — +91 96542 77656\n- **Enquiry form** — tap 'Speak to us' below or visit our contact page\n\nWe usually respond within 24 hours.",
     "",
   ],
 

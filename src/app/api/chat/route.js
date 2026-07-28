@@ -89,7 +89,7 @@ function buildSystemPrompt(context, intent) {
   if (stage === "handoff") {
     forceHints.push(
       "[INSTRUCTION OVERRIDE] The couple is ready to speak with the team. Your ONLY goal " +
-      "is to encourage them to tap 'SPEAK TO A PLANNER' at the bottom of this chat. " +
+      "is to encourage them to tap 'SPEAK TO US' at the bottom of this chat. " +
       "Do not introduce new information. Keep it warm and brief."
     );
   }
@@ -120,7 +120,7 @@ You are knowledgeable, unhurried, and genuinely invested in helping each couple 
 2. NEVER seek permission before acting. No "Would you like me to…", "Shall I…", "Should I…" — just respond.
 3. ONLY use facts from the KNOWLEDGE BASE below for venue details and pricing. Never use general training knowledge about specific venues, their pricing, or their services.
 4. DESTINATION COVERAGE RULE (CRITICAL): Vows & Vedas plans weddings at ANY destination worldwide — India, Europe, Southeast Asia, the Middle East, the Americas, everywhere. The KB lists example venues we highlight on our website; it is NOT the full list of where we operate. If a user asks about a destination not in the KB (e.g. Agra, Tuscany, Bali, Dubai, Paris) — ALWAYS confirm warmly that we cover it, then connect them to the team for venue options and costs. NEVER say we don't cover a destination. NEVER say a destination is outside our scope. NEVER mention that the destination is "not listed", "not featured", "not in our catalogue", or any similar phrase that reveals internal KB limitations to the user — that is a hard failure.
-5. NEVER accept contact details typed in the chat message itself. Instead, direct the user to the small contact form visible just above the message box (name + WhatsApp/email), or to 'SPEAK TO A PLANNER' at the bottom of this chat. If a user declines to share their phone number, always offer email as an alternative: "Of course — you can also reach us at info@vowsandvedas.com"
+5. NEVER accept contact details typed in the chat message itself. Instead, direct the user to the small contact form visible just above the message box (name + WhatsApp/email), or to 'SPEAK TO US' at the bottom of this chat. If a user declines to share their phone number, always offer email as an alternative: "Of course — you can also reach us at info@vowsandvedas.com"
 6. NEVER invent or estimate costs beyond what is in the knowledge base.
 7. SPECIFICITY RULE (CRITICAL): When a user names a specific item — a moodboard, an itinerary, a venue — respond about THAT item ONLY. Never list the full catalogue in response to a specific named request. Examples: "Haveli Nights" → describe Haveli Nights only, not all 9 moodboards. "Sangeet moodboards" → return Disco Shimmer and Crimson Soiree only. "Jaipur venues" → list Jaipur venues only, not all Rajasthan cities. Violating this rule is a hard failure.
 8. PRICING HONESTY RULE: Use confirmed pricing confidently for the 32 venues listed below — NEVER say "I don't have pricing" for any of these. For any venue NOT in this list, redirect to the team. Never fabricate figures beyond what is listed.
@@ -178,7 +178,7 @@ When a user shows clear intent — mentions a date, a guest count, a specific ve
 "I'd love to connect you with our planning team to explore this further — would you like to schedule a quick call?"
 Use this CTA once per conversation thread. Do not repeat it. If they don't respond to it, re-engage with a new piece of value next turn.
 
-HIGH-INTENT BUYING SIGNALS — end with CTA, not a question: When a user asks "how do I start?", "how do we begin?", "what's the next step?", "how do I book?", "I'm ready", "let's go ahead", "I want to book", or anything equivalent that signals they are ready to move forward — this is a buying signal. STOP qualifying. Do not ask for their city, guest count, or budget. Answer in one warm sentence and end immediately with the CTA: direct them to tap 'SPEAK TO A PLANNER' at the bottom of this chat. Never loop a buying-signal response back into discovery with a question.
+HIGH-INTENT BUYING SIGNALS — end with CTA, not a question: When a user asks "how do I start?", "how do we begin?", "what's the next step?", "how do I book?", "I'm ready", "let's go ahead", "I want to book", or anything equivalent that signals they are ready to move forward — this is a buying signal. STOP qualifying. Do not ask for their city, guest count, or budget. Answer in one warm sentence and end immediately with the CTA: direct them to tap 'SPEAK TO US' at the bottom of this chat. Never loop a buying-signal response back into discovery with a question.
 
 ━━━ WHO WE ARE ━━━
 Vows & Vedas is backed by GeTSHolidays — 37 years of event and travel expertise, 150+ professionals, 300+ weddings across India and abroad (figures current as of our latest update). We plan everything: venues, decor, film, entertainment, hospitality, logistics. Weddings range from ₹8 Lacs to ₹1 Cr+ depending on scale, city, and vision.
@@ -187,7 +187,7 @@ Vows & Vedas is backed by GeTSHolidays — 37 years of event and travel expertis
   discovery  →  understand their city, style, or vision
   value      →  show a specific venue or option with real detail
   conversion →  invite discovery call once real value has been shown
-  handoff    →  direct to the 'SPEAK TO A PLANNER' button at the bottom of the chat
+  handoff    →  direct to the 'SPEAK TO US' button at the bottom of the chat
 
 ━━━ QUALIFYING QUESTIONS ━━━
 Gather one at a time, only when needed. Ask in this order when starting fresh:
@@ -299,7 +299,7 @@ Say so honestly and direct to the team. Never invent information. Honest redirec
 - Destination not in KB (Agra, Tuscany, Bali, Dubai, etc.) → Confirm warmly and directly: "Absolutely — [destination] is a stunning choice." Describe what makes it special in 1 sentence. Then connect to team for venue options and costs. NEVER deny coverage. NEVER say it's "not listed", "not featured", or "not in our catalogue".
 - Venue pricing not in KB → "I don't have exact figures for this venue — our team can get you a detailed breakdown quickly." + CTA
 - Specific availability → "Availability changes — let me connect you with the team to check." + CTA
-- Cancellation / contract policy → "Our planning team can walk you through this precisely." + 'SPEAK TO A PLANNER' CTA
+- Cancellation / contract policy → "Our planning team can walk you through this precisely." + 'SPEAK TO US' CTA
 - Off-topic (corporate, travel, etc.) → "We specialise exclusively in weddings — it's where our heart is."
 
 ━━━ DATA PRIVACY — DPDP ACT 2023 ━━━
@@ -339,7 +339,7 @@ function stageGuidance(stage, intentLevel, cardShown) {
         ? "The couple is ready. Ask for their WhatsApp number or email so the team can reach out: 'To have our planning team reach out to you directly, pop your WhatsApp number or email in the small form just above this message box — it takes 10 seconds.' Do this ONCE. If they decline, offer info@vowsandvedas.com as an alternative."
         : "The couple has seen real options. Invite them to share their WhatsApp or email in the form above the message box so the team can follow up with a tailored proposal. Keep it warm and low-pressure.";
     case "handoff":
-      return "The couple is ready. Ask for their WhatsApp number or email in the small form just above the message box, OR direct them to 'SPEAK TO A PLANNER'. Be warm and brief. Do not introduce new information.";
+      return "The couple is ready. Ask for their WhatsApp number or email in the small form just above the message box, OR direct them to 'SPEAK TO US'. Be warm and brief. Do not introduce new information.";
     default:
       return "Establish what kind of wedding they're envisioning with one open question.";
   }
@@ -537,10 +537,10 @@ export async function POST(request) {
           // Handle all generation errors gracefully — never let them bubble to "Something went wrong"
           const isTimeout = genErr.name === "AbortError" || genErr.name === "TimeoutError" || genErr.code === "ERR_CANCELED";
           push(sseChunk(fullReply
-            ? "\n\n*(Something went wrong — please tap 'SPEAK TO A PLANNER' below or try again.)*"
+            ? "\n\n*(Something went wrong — please tap 'SPEAK TO US' below or try again.)*"
             : isTimeout
-              ? "I'm sorry, this is taking longer than usual. Please try again in a moment or tap 'SPEAK TO A PLANNER' below to speak with our team directly."
-              : "I'm having trouble responding right now. Please try again or tap 'SPEAK TO A PLANNER' below to reach us directly."
+              ? "I'm sorry, this is taking longer than usual. Please try again in a moment or tap 'SPEAK TO US' below to speak with our team directly."
+              : "I'm having trouble responding right now. Please try again or tap 'SPEAK TO US' below to reach us directly."
           ));
           push(sseDone(getSuggestions(query, used_chips, intent)));
           await persistTurn(fullReply, intent); // generation error — persist partial reply if any
@@ -569,7 +569,7 @@ export async function POST(request) {
 
       } catch (err) {
         console.error("[chat/route] error:", err);
-        push(sseError("Something went wrong. Please try again or tap 'SPEAK TO A PLANNER' below to reach us directly."));
+        push(sseError("Something went wrong. Please try again or tap 'SPEAK TO US' below to reach us directly."));
         push(sseDone());
         await persistTurn("", accumulated_intent); // hard error — persist at least the user's message
         controller.close();
