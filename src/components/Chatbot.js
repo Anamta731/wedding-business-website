@@ -542,7 +542,7 @@ export default function Chatbot() {
                   src="/assets/photos/mira-avatar.png"
                   alt="MIRA"
                   className="w-full h-full object-cover"
-                  style={{ transform: "scale(1.45)", transformOrigin: "center 38%" }}
+                  style={{ transform: "scale(1.3)", transformOrigin: "center top" }}
                 />
               </span>
               <div>
@@ -608,7 +608,7 @@ export default function Chatbot() {
                             src="/assets/photos/mira-avatar.png"
                             alt="MIRA"
                             className="w-full h-full object-cover"
-                            style={{ transform: "scale(1.45)", transformOrigin: "center 38%" }}
+                            style={{ transform: "scale(1.3)", transformOrigin: "center top" }}
                           />
                         </span>
                       ) : (
@@ -901,13 +901,13 @@ export default function Chatbot() {
                     src="/assets/photos/mira-avatar.png"
                     alt="MIRA"
                     className="w-full h-full object-cover"
-                    style={{ transform: "scale(1.45)", transformOrigin: "center 38%" }}
+                    style={{ transform: "scale(1.3)", transformOrigin: "center top" }}
                   />
                 </span>
               )}
             </span>
             {!open && unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-[#fff8e7] shadow-md z-10 pointer-events-none">
+              <span className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-[#C9A234] text-[#1A1408] text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-[#1A1408] shadow-md z-10 pointer-events-none">
                 {unreadCount}
               </span>
             )}
