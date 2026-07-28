@@ -86,7 +86,7 @@ function BotMessage({ text, onCtaClick, contactHref = "/contact" }) {
   return <div className="space-y-1">{blocks}</div>;
 }
 
-const GET_QUOTE_LABEL = "Get a Quote";
+const GET_QUOTE_LABEL = "Start Planning";
 
 const STARTERS = [
   GET_QUOTE_LABEL,
@@ -319,6 +319,7 @@ export default function Chatbot() {
           accumulated_intent:   accIntent,
           lead_captured:        leadCaptured,
           used_chips:           usedChips,
+          session_id:           sessionIdRef.current,
         }),
       });
 
@@ -394,7 +395,7 @@ export default function Chatbot() {
           const updated = [...prev];
           updated[updated.length - 1] = {
             role: "bot",
-            text: "Something went wrong. Please try again or tap 'SPEAK TO A PLANNER' below to reach us directly.",
+            text: "Something went wrong. Please try again or tap 'SPEAK TO US' below to reach us directly.",
             streaming: false,
           };
           return updated;
@@ -636,7 +637,7 @@ export default function Chatbot() {
                             <span className="text-[10px] text-[#9A8F7E]/70 leading-snug">
                               Taking longer than usual —{" "}
                               <button onClick={handleCtaToContact} className="text-[#C9A234] underline underline-offset-2 cursor-pointer">
-                                speak to a planner now
+                                speak to us now
                               </button>
                             </span>
                           )}
@@ -749,7 +750,7 @@ export default function Chatbot() {
                   </button>
                 ))}
               </div>
-              {/* Desktop: Get a Quote full-width, then 2-col grid for the rest */}
+              {/* Desktop: Start Planning full-width, then 2-col grid for the rest */}
               <div className="hidden sm:flex flex-col gap-1.5">
                 {STARTERS.map((s, i) => (
                   <button
@@ -857,7 +858,7 @@ export default function Chatbot() {
               <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.93a16 16 0 0 0 6.29 6.29l.93-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
               </svg>
-              Speak to a Planner
+              Speak to us
             </a>
           </div>
         </div>
