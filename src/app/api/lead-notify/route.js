@@ -1,17 +1,41 @@
 import { EmailClient } from "@azure/communication-email";
 import { DefaultAzureCredential } from "@azure/identity";
 import { getConversationsContainer } from "@/lib/cosmos";
+import { parseLeadContact, TTL_KEEP_FOREVER } from "@/lib/conversation.mjs";
 
 const _credential = new DefaultAzureCredential();
 
-// Phase 0: stamp leadFired on the conversation doc (fire-and-forget, best-effort, never throws).
-async function markConversationLeadFired(sessionId) {
+/**
+ * Phase 0: stamp the conversation doc when a lead fires (best-effort, never throws).
+ *
+ * Does three things, and the last two were missing (copilot register D-056 §4):
+ *  1. `leadFired: true` — the sessionId join the copilot matches on.
+ *  2. **Contact fields.** Live prod docs had `email`/`userId` and every contact field NULL despite
+ *     `leadFired: true`, so the copilot could not match a conversation to a lead at all. The lead form
+ *     sends one free-text "Phone / Email" field; it is split here and the raw string kept verbatim so a
+ *     mis-split loses nothing.
+ *  3. **`ttl: -1`.** THIS IS THE ONLY WRITER THAT CAN DO IT. `persistTurn` recomputes ttl each upsert,
+ *     but when a lead fires on the FINAL turn no further upsert happens — so without this the converted
+ *     doc would keep its 180-day clock and be purged (D-056 §4).
+ *
+ * `userId` is intentionally NOT set here: it is request-scoped session state that /api/chat already
+ * stamps via persistTurn, and it is absent from this route's payload.
+ */
+async function markConversationLeadFired(sessionId, { name = "", contact = "" } = {}) {
   if (!sessionId || sessionId === "unknown") return;
   try {
-    await getConversationsContainer().item(sessionId, sessionId).patch([
+    const { email, phone, raw } = parseLeadContact(contact);
+    const ops = [
       { op: "set", path: "/leadFired", value: true },
+      { op: "set", path: "/ttl", value: TTL_KEEP_FOREVER }, // converted → retained (D-056)
       { op: "set", path: "/lastMessageAt", value: new Date().toISOString() },
-    ]);
+    ];
+    if (email) ops.push({ op: "set", path: "/email", value: email });
+    if (phone) ops.push({ op: "set", path: "/phone", value: phone });
+    if (raw) ops.push({ op: "set", path: "/contactRaw", value: raw });
+    const trimmedName = String(name || "").trim();
+    if (trimmedName) ops.push({ op: "set", path: "/contactName", value: trimmedName });
+    await getConversationsContainer().item(sessionId, sessionId).patch(ops);
   } catch (e) {
     if (e.code !== 404) console.error("[lead-notify/conversation] non-fatal:", e?.message || e);
   }
@@ -193,7 +217,7 @@ export async function POST(req) {
     await poller.pollUntilDone();
 
     // Link the conversation to the fired lead (best-effort; not user-visible).
-    await markConversationLeadFired(session_id);
+    await markConversationLeadFired(session_id, { name, contact });
 
     return Response.json({ success: true });
   } catch (err) {

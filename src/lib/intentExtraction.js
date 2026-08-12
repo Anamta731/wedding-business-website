@@ -32,7 +32,7 @@ function getClient() {
  * @property {string}   wedding_date        - e.g. "March 2026" | ""
  * @property {string}   guest_count         - e.g. "150" | "Couple" | ""
  * @property {string}   wedding_style       - e.g. "traditional" | "contemporary" | ""
- * @property {string}   budget_tier         - "₹8-15L" | "₹15-30L" | "₹30-60L" | "₹60L+" | ""
+ * @property {string}   budget_tier         - "₹8-15L" | "₹15-30L" | "₹30-60L" | "₹60L-1Cr" | "₹1-2Cr" | "₹2Cr+" | ""
  * @property {string}   function_type       - "mehndi" | "haldi" | "sangeet" | "reception" | "full wedding" | ""
  * @property {string[]} services_needed     - e.g. ["decor", "photography"]
  * @property {string[]} venues_viewed       - names of venues already shown this session
@@ -51,14 +51,25 @@ const SYSTEM_PROMPT = `You are an intelligent query parser for a luxury wedding 
 Extract the following entities from the user's message (use conversation history for context).
 
 Entities to extract:
-- cities (array of strings): Indian cities/regions the user is interested in for their wedding.
-  e.g. ["Udaipur", "Goa", "Kerala", "Rajasthan", "Jaipur"]
-  ONLY extract when user EXPLICITLY mentions a city for their wedding. Do NOT extract from comparison or general questions.
+- cities (array of strings): Indian cities OR REGIONS the user is CONSIDERING for their wedding.
+  e.g. ["Udaipur", "Goa", "Kerala", "Rajasthan", "Jaipur", "Hills"]
+  Extract whenever they name somewhere they are considering — INCLUDING when they are weighing options.
+  "torn between Goa and the hills" → ["Goa", "Hills"].  "Goa or Udaipur?" → ["Goa", "Udaipur"].
+  Region words count: "the hills" / "hill station" → "Hills"; "the backwaters" → "Kerala".
+  Do NOT extract a place mentioned only as where they are travelling FROM, or in a question about US
+  rather than their wedding ("do you work outside India?").
 - venue_type (string): "palace" | "beach" | "hills" | "heritage" | "jungle" | "backwaters" | "city" | ""
-- wedding_date (string): e.g. "March 2026", "next winter", "December" — or ""
-- guest_count (string): normalize to a short label — e.g. "50", "150", "500+", "Intimate (under 50)" — or ""
+- wedding_date (string): the wedding timing as stated, e.g. "December 2026", "March 2026", "next winter" — or ""
+  ALWAYS keep the YEAR when the user states one — "150 guests in December 2026" → "December 2026",
+  NEVER just "December". Month and year travel together.
+- guest_count (string): the headcount as a short label — e.g. "50", "150", "500+", "Intimate (under 50)" — or ""
+  Strip approximators: "~150 guests" → "150"; "around 200 pax" → "200"; "about 1,000" → "1000".
+  A stated number ALWAYS wins over a vague label.
 - wedding_style (string): e.g. "traditional", "contemporary", "fusion", "boho", "grand", "intimate" — or ""
-- budget_tier (string): one of "₹8-15L" | "₹15-30L" | "₹30-60L" | "₹60L+" — map user's budget to nearest tier, or ""
+- budget_tier (string): one of "₹8-15L" | "₹15-30L" | "₹30-60L" | "₹60L-1Cr" | "₹1-2Cr" | "₹2Cr+" — or ""
+  UNIT CONVERSION IS MANDATORY: 1 Cr (crore) = 100 L (lakh).
+  "budget ~1.5 crore total" → ₹150L → "₹1-2Cr".   "80 lakhs" → "₹60L-1Cr".   "25L" → "₹15-30L".
+  Map the stated TOTAL budget to the nearest band. Never return "" just because a figure is large.
 - function_type (string): "mehndi" | "haldi" | "sangeet" | "reception" | "full wedding" | "" — what ceremony they're asking about
 - services_needed (array): subset of ["planning", "decor", "photography", "entertainment", "hospitality", "catering", "logistics"]
 - selected_venue (string): EXACT venue name if user explicitly selects or asks for details about one specific venue
@@ -165,6 +176,22 @@ function fallbackIntent(query) {
     user_language: "English",
     rewritten_query: query || "",
   };
+}
+
+/**
+ * Canonical intent shape, merged over whatever the client has accumulated so far.
+ *
+ * WHY: the static-FAQ bypass in /api/chat answers without running extraction, and it used to persist
+ * the CLIENT's `accumulated_intent` verbatim — which on a first message is `{}`. That is how a live
+ * prod conversation (2026-08-04) ended up with a completely EMPTY `accumulatedIntent` (0 keys), worse
+ * than the D-036 under-capture. Persisting through this helper guarantees the doc always carries the
+ * canonical keys, so "empty object" can never again be confused with "nothing to extract".
+ *
+ * (The greedy-matcher fix is the other half: specific first messages now reach the generative path and
+ * get real extraction, so the static path is only ever taken by genuinely non-specific questions.)
+ */
+export function shapedIntent(accumulatedIntent = {}, query = "") {
+  return { ...fallbackIntent(query), ...(accumulatedIntent || {}) };
 }
 
 /**

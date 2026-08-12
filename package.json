@@ -13,7 +13,8 @@
     "compress-images": "node scripts/compress-images.mjs",
     "compress-images:dry": "node scripts/compress-images.mjs --dry-run",
     "compress-images:new": "node scripts/compress-images.mjs --paths \"public/assets/photos/moodboards/Haldi - Rangon Ki Rasleela\" \"public/assets/photos/moodboards/Painted Gardens \" \"public/assets/photos/moodboards/Wedding Option 3 - Haveli Nights\" public/assets/photos/services/planning-service.jpg \"public/assets/photos/services/Designa nd decor 1.jpg\"",
-    "compress-images:new:dry": "node scripts/compress-images.mjs --dry-run --paths \"public/assets/photos/moodboards/Haldi - Rangon Ki Rasleela\" \"public/assets/photos/moodboards/Painted Gardens \" \"public/assets/photos/moodboards/Wedding Option 3 - Haveli Nights\" public/assets/photos/services/planning-service.jpg \"public/assets/photos/services/Designa nd decor 1.jpg\""
+    "compress-images:new:dry": "node scripts/compress-images.mjs --dry-run --paths \"public/assets/photos/moodboards/Haldi - Rangon Ki Rasleela\" \"public/assets/photos/moodboards/Painted Gardens \" \"public/assets/photos/moodboards/Wedding Option 3 - Haveli Nights\" public/assets/photos/services/planning-service.jpg \"public/assets/photos/services/Designa nd decor 1.jpg\"",
+    "test": "node --test"
   },
   "dependencies": {
     "@azure/communication-email": "^1.1.0",

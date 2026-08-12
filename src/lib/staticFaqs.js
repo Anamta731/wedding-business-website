@@ -46,6 +46,13 @@ const FAQ_TABLE = [
     "Which destination or setting appeals to you most?",
   ],
 
+  // ── Partial / venue-only planning ───────────────────────────────────────────
+  [
+    /\bpartial planning\b|\bpartial (service|package)\b|\bvenue.?only\b|\bcoordination only\b|\balready (booked|have).{0,15}venue\b|\bjust (need|want).{0,20}(coordination|execution|on.ground)\b|\bhow does partial\b/i,
+    "Partial planning is for couples who have already secured a venue or booked some vendors and need Vows & Vedas to step in, fill the gaps, and take ownership of execution:\n- We audit what's already in place and identify what's missing\n- Source and negotiate any remaining vendors\n- Manage all contracts and coordination going forward\n- Handle complete on-ground execution across every function\n- Ensure the vision stays consistent even when you've mixed vendors\n\nIt's ideal if you've done some groundwork but want a professional team to bring it all together flawlessly.",
+    "The fee for partial planning depends on how much is already in place and what we need to take over. I'd love to connect you with our planning team for a precise scope — shall I arrange that?",
+  ],
+
   // ── All venues / venue listing (catch-all — after destination-specific) ──────
   [
     /\bvenues?\b/i,
@@ -273,13 +280,6 @@ const FAQ_TABLE = [
     "Which of these would you like to explore first?",
   ],
 
-  // ── Partial / venue-only planning ───────────────────────────────────────────
-  [
-    /\bpartial planning\b|\bpartial (service|package)\b|\bvenue.?only\b|\bcoordination only\b|\balready (booked|have).{0,15}venue\b|\bjust (need|want).{0,20}(coordination|execution|on.ground)\b|\bhow does partial\b/i,
-    "Partial planning is for couples who have already secured a venue or booked some vendors and need Vows & Vedas to step in, fill the gaps, and take ownership of execution:\n- We audit what's already in place and identify what's missing\n- Source and negotiate any remaining vendors\n- Manage all contracts and coordination going forward\n- Handle complete on-ground execution across every function\n- Ensure the vision stays consistent even when you've mixed vendors\n\nIt's ideal if you've done some groundwork but want a professional team to bring it all together flawlessly.",
-    "The fee for partial planning depends on how much is already in place and what we need to take over. I'd love to connect you with our planning team for a precise scope — shall I arrange that?",
-  ],
-
   // ── Full vs partial comparison ───────────────────────────────────────────────
   [
     /\b(full vs partial|partial vs full|difference between.{0,20}plan|compare.{0,20}plan(ning)? (tiers?|types?|options?))\b/i,
@@ -338,7 +338,7 @@ const FAQ_TABLE = [
 
   // ── Add-ons ──────────────────────────────────────────────────────────────────
   [
-    /\b(add.?ons?|3d (model|visual|render)|sfx|fireworks?|e.?invites?|digital invitation|wedding website|trousseau|gifting|favou?rs?|honeymoon plan|marriage registr|visa assist)\b/i,
+    /\b(add.?ons?|3d (models?|visuals?|renders?)|sfx|fireworks?|e.?invites?|digital invitation|wedding website|trousseau|gifting|favou?rs?|honeymoon plan|marriage registr|visa assist)\b/i,
     "We offer 10 add-on services:\n- 3-D Models — photorealistic venue visualisation before setup\n- SFX & Fireworks — pyrotechnics and atmospheric effects for grand entries\n- E-Invites — custom digital invitations with RSVP tracking\n- Home Decor — floral and lighting for residential pre-wedding functions\n- Wedding Website — guest hub with RSVPs, gallery, and travel itineraries\n- Trousseau Shopping — designer previews and bridal wardrobe styling\n- Gifting & Favours — custom hampers and artisanal welcome gifts\n- Honeymoon Planning — tailored luxury itineraries globally\n- Marriage Registration — paperwork, slot booking, and registry guidance\n- Visa Assistance — guest visa processing and embassy appointment support",
     "Which of these interests you?",
   ],
@@ -387,6 +387,68 @@ const VENUE_KEYWORDS = [
 ];
 
 /**
+ * SPECIFIC CITIES — a query naming one of these must reach the LLM, which answers city-scoped and
+ * correctly (integrity test T4b "And in Mumbai?" already did this well). Deliberately EXCLUDES the
+ * four region words that have good curated static answers and passed the test — `rajasthan`, `goa`,
+ * `kerala`, `hill station` — so "venues in Goa?" keeps its handcrafted reply (T2 PASS) while
+ * "venues in Delhi?" / "Jaipur venues only" stop hitting the catalogue wall (T3/T4a FAIL).
+ */
+const SPECIFIC_PLACES = [
+  "jaipur", "udaipur", "jodhpur", "jaisalmer", "ranthambore", "bishangarh", "samode", "barwara",
+  "pushkar", "bikaner", "neemrana", "alwar", "mount abu", "ajmer",
+  "delhi", "ncr", "gurgaon", "gurugram", "noida", "faridabad", "ghaziabad",
+  "mumbai", "bombay", "pune", "lonavala", "alibaug", "nashik",
+  "bangalore", "bengaluru", "mysore", "coorg", "chikmagalur",
+  "hyderabad", "chennai", "kolkata", "ahmedabad", "surat", "indore", "lucknow", "chandigarh",
+  "kovalam", "kochi", "cochin", "munnar", "alleppey", "varkala",
+  "rishikesh", "dehradun", "mussoorie", "nainital", "shimla", "manali", "kasauli", "srinagar",
+  "corbett", "jim corbett", "agra", "varanasi", "amritsar",
+];
+
+/**
+ * Does the query carry enough specificity that a canned answer would be wrong?
+ *
+ * This is the fix for integrity-test T3/T4a/T5: the FAQ table's broad catch-alls (`\bvenues?\b`,
+ * `budget`, `pax`) were claiming questions they could not actually answer, so real couples asking
+ * "venues in Udaipur?" got a multi-region catalogue dump and never reached the LLM (whose own
+ * specificity rule works). Per the report's spec: a specific city, a real number/₹ amount/date, or a
+ * scoping "only" all route to the generative path.
+ *
+ * Exported for regression tests.
+ */
+export function isSpecificQuery(query) {
+  const q = String(query || "");
+  const lq = q.toLowerCase();
+
+  // 1. a specific city/place — word-boundary matched so "delhi" doesn't fire inside another word
+  if (SPECIFIC_PLACES.some((p) => new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(lq))) {
+    return true;
+  }
+
+  // 2. money — a ₹ figure, or a number with a scale word ("1.5 crore", "50 lakhs", "8L")
+  if (/₹|\brs\.?\s*\d/i.test(q)) return true;
+  if (/\d+(?:\.\d+)?\s*(?:lakh|lakhs|lac|lacs|crore|crores|cr|k|l)\b/i.test(q)) return true;
+
+  // 3. scale or date — a 2+ digit number (guest count, year), or a number with a headcount unit.
+  //    `\d{2,}` deliberately, so the "3-D models" add-on FAQ is not caught by a lone digit.
+  if (/\b\d{2,}\b/.test(q)) return true;
+  if (/\b\d+\s*(?:pax|guests?|people|persons?|rooms?|nights?|days?)\b/i.test(q)) return true;
+
+  // 4. a named month — a stated date is a planning specific, not an FAQ
+  if (/\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(t|tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\b/i.test(q)) {
+    return true;
+  }
+
+  // 5. a scoping "only" ("Jaipur venues only" — T3). Exempt the compound service names, so
+  //    "venue-only sourcing" / "coordination only" keep their partial-planning FAQ.
+  if (/\bonly\b/i.test(lq) && !/\b(venue|coordination|execution|planning|service)[\s-]?only\b/i.test(lq)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Returns a static answer string if the query matches, otherwise null.
  */
 export function matchStaticFaq(query, leadCaptured = false) {
@@ -395,6 +457,10 @@ export function matchStaticFaq(query, leadCaptured = false) {
   // Venue-specific queries must go to the LLM
   const lq = query.toLowerCase();
   if (VENUE_KEYWORDS.some(name => lq.includes(name))) return null;
+
+  // Anything specific goes to the LLM — a canned answer cannot scope to a city, a headcount, a date
+  // or a budget (integrity test T3/T4a/T5).
+  if (isSpecificQuery(query)) return null;
 
   for (const [pattern, body, handoff] of FAQ_TABLE) {
     if (pattern.test(query)) {

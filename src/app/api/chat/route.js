@@ -11,7 +11,7 @@
 import { AzureOpenAI } from "openai";
 import { DefaultAzureCredential, getBearerTokenProvider } from "@azure/identity";
 import { matchStaticFaq } from "@/lib/staticFaqs";
-import { extractIntent }  from "@/lib/intentExtraction";
+import { extractIntent, shapedIntent } from "@/lib/intentExtraction";
 import { retrieveContext } from "@/lib/retrieval";
 import { getSuggestions }  from "@/lib/suggestions";
 import { getSession }      from "@/lib/session";
@@ -410,7 +410,9 @@ export async function POST(request) {
 
   /**
    * Persist one completed turn to `conversations` (best-effort; awaited before the stream closes).
-   * TODO(B1-DPDP): transcripts contain PII — privacy-policy update is a prod deploy blocker (EDGE-CASES B1).
+   * PII: transcripts contain personal data. The DPDP gate is CLEARED — the privacy policy is published
+   * and §2 discloses storing full conversations "so our team can follow up on your enquiry more
+   * effectively"; retention is 180 days for a non-converted session (copilot register D-056).
    * Never throws: persistence must be INVISIBLE to the chatbot user.
    */
   async function persistTurn(assistantText, intentObj) {
@@ -450,17 +452,30 @@ export async function POST(request) {
           push(sseMeta({ stage: "discovery", intent_level: "low", source: "static_faq" }));
           const suggestions = getSuggestions(query, used_chips, accumulated_intent);
           push(sseDone(suggestions));
-          await persistTurn(staticAnswer, accumulated_intent); // static-FAQ bypass — no new intent computed
+          // Static-FAQ bypass runs no extraction, so persist the CANONICAL shape rather than the
+          // client's raw accumulated_intent — which is `{}` on a first message and is how a live doc
+          // ended up with a totally empty accumulatedIntent (0 keys).
+          await persistTurn(staticAnswer, shapedIntent(accumulated_intent, query));
           controller.close();
           return;
         }
 
         // ── Steps 2 + 3: Intent extraction & RAG retrieval in parallel ──────
         // Both run concurrently — saves 3-4s vs sequential. No second search.
+        //
+        // TIMING (integrity test T7/T8: generative answers took 20-30s). MEASURE ONLY — no perf work
+        // here. Each leg is timed separately so the deployment session can tell a slow Azure OpenAI
+        // call (shared deployment / quota, D-017 gap) apart from a slow RAG cold path, with data
+        // rather than a guess. Logged to the SWA function log; never surfaced to the visitor.
+        const tStart = Date.now();
+        let tIntent = null, tRag = null;
         const [intent, docs] = await Promise.all([
-          extractIntent(query, conversation_history, accumulated_intent),
-          retrieveContext(query, accumulated_intent, { topK: 6 }),
+          extractIntent(query, conversation_history, accumulated_intent)
+            .finally(() => { tIntent = Date.now() - tStart; }),
+          retrieveContext(query, accumulated_intent, { topK: 6 })
+            .finally(() => { tRag = Date.now() - tStart; }),
         ]);
+        const tParallel = Date.now() - tStart;
 
         const context = docs.length > 0
           ? docs.map((d, i) =>
@@ -492,6 +507,8 @@ export async function POST(request) {
         const CHIPS_MARKER = "[CHIPS:";
         const HOLD = CHIPS_MARKER.length; // chars to hold back at all times
 
+        const tGenStart = Date.now();
+        let tFirstChunk = null;
         try {
           const completion = await getClient().chat.completions.create(
             {
@@ -505,6 +522,7 @@ export async function POST(request) {
           );
 
           for await (const chunk of completion) {
+            if (tFirstChunk === null) tFirstChunk = Date.now() - tGenStart; // time-to-first-token
             const token = chunk.choices?.[0]?.delta?.content;
             if (!token) continue;
             fullReply += token;
@@ -564,6 +582,12 @@ export async function POST(request) {
           ? llmChips
           : getSuggestions(query, used_chips, intent);
         push(sseDone(suggestions));
+        console.log("[chat/timing]", JSON.stringify({
+          sessionId: session_id || null,
+          intentMs: tIntent, ragMs: tRag, parallelMs: tParallel,
+          genFirstTokenMs: tFirstChunk, genTotalMs: Date.now() - tGenStart,
+          totalMs: Date.now() - tStart, ragDocs: docs.length, replyChars: fullReply.length,
+        }));
         await persistTurn(fullReply.replace(/\[CHIPS:[^\]]*\]/, "").trim(), intent); // normal completion
         controller.close();
 
@@ -571,7 +595,7 @@ export async function POST(request) {
         console.error("[chat/route] error:", err);
         push(sseError("Something went wrong. Please try again or tap 'SPEAK TO US' below to reach us directly."));
         push(sseDone());
-        await persistTurn("", accumulated_intent); // hard error — persist at least the user's message
+        await persistTurn("", shapedIntent(accumulated_intent, query)); // hard error — keep the user's message
         controller.close();
       }
     },
